@@ -85,6 +85,7 @@ t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/opencv.hpp
 t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/opencv_modules.hpp
 t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/photo.hpp
 t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/photo/photo_c.h
+t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/plot.hpp
 t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/shape.hpp
 t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/shape/emdL1.hpp
 t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv2/shape/hist_cost.hpp

@@ -6,12 +6,16 @@
 
 #IncludeRegexTransform: 
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp
 iostream
 -
 string
 -
 opencv2/opencv.hpp
+-
+opencv2/highgui.hpp
+-
+opencv2/plot.hpp
 -
 cmath
 -
@@ -961,6 +965,10 @@ opencv2/photo/photo_c.h
 /usr/local/include/opencv2/photo/photo_c.h
 opencv2/core/core_c.h
 /usr/local/include/opencv2/photo/opencv2/core/core_c.h
+
+/usr/local/include/opencv2/plot.hpp
+opencv2/core.hpp
+-
 
 /usr/local/include/opencv2/shape.hpp
 opencv2/shape/emdL1.hpp

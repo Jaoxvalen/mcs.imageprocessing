@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration
+CMAKE_SOURCE_DIR = /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration
+CMAKE_BINARY_DIR = /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration
 
 # Include any dependencies generated for this target.
 include t1/CMakeFiles/main.out.dir/depend.make
@@ -59,16 +59,16 @@ include t1/CMakeFiles/main.out.dir/flags.make
 
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/CMakeFiles/main.out.dir/flags.make
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object t1/CMakeFiles/main.out.dir/main.cpp.o"
-	cd /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1 && /usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.out.dir/main.cpp.o -c /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object t1/CMakeFiles/main.out.dir/main.cpp.o"
+	cd /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1 && /usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.out.dir/main.cpp.o -c /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp
 
 t1/CMakeFiles/main.out.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/main.out.dir/main.cpp.i"
-	cd /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1 && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp > CMakeFiles/main.out.dir/main.cpp.i
+	cd /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1 && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp > CMakeFiles/main.out.dir/main.cpp.i
 
 t1/CMakeFiles/main.out.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/main.out.dir/main.cpp.s"
-	cd /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1 && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp -o CMakeFiles/main.out.dir/main.cpp.s
+	cd /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1 && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1/main.cpp -o CMakeFiles/main.out.dir/main.cpp.s
 
 t1/CMakeFiles/main.out.dir/main.cpp.o.requires:
 
@@ -90,53 +90,53 @@ main_out_EXTERNAL_OBJECTS =
 
 t1/main.out: t1/CMakeFiles/main.out.dir/main.cpp.o
 t1/main.out: t1/CMakeFiles/main.out.dir/build.make
-t1/main.out: /usr/local/lib/libopencv_stitching.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_superres.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_stitching.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_videostab.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_fuzzy.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_xphoto.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_reg.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_aruco.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_bgsegm.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_bioinspired.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_ccalib.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_freetype.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_optflow.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_dpm.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_face.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_freetype.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_fuzzy.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_hdf.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_dnn_objdetect.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_bioinspired.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_tracking.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_datasets.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_img_hash.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_line_descriptor.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_optflow.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_reg.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_rgbd.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_saliency.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_text.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_surface_matching.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_ccalib.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_xobjdetect.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_bgsegm.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_xfeatures2d.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_stereo.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_structured_light.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_surface_matching.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_tracking.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_xfeatures2d.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_ximgproc.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_xobjdetect.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_xphoto.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_line_descriptor.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_saliency.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_rgbd.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_shape.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_ximgproc.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_photo.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_datasets.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_plot.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_text.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_dnn.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_ml.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_dnn.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_objdetect.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_video.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_phase_unwrapping.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_calib3d.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_features2d.so.3.4.0
+t1/main.out: /usr/local/lib/libopencv_flann.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_highgui.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_videoio.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_phase_unwrapping.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_flann.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_imgcodecs.so.3.4.0
-t1/main.out: /usr/local/lib/libopencv_objdetect.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_imgproc.so.3.4.0
 t1/main.out: /usr/local/lib/libopencv_core.so.3.4.0
 t1/main.out: t1/CMakeFiles/main.out.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable main.out"
-	cd /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1 && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.out.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable main.out"
+	cd /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1 && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.out.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 t1/CMakeFiles/main.out.dir/build: t1/main.out
@@ -148,10 +148,10 @@ t1/CMakeFiles/main.out.dir/requires: t1/CMakeFiles/main.out.dir/main.cpp.o.requi
 .PHONY : t1/CMakeFiles/main.out.dir/requires
 
 t1/CMakeFiles/main.out.dir/clean:
-	cd /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1 && $(CMAKE_COMMAND) -P CMakeFiles/main.out.dir/cmake_clean.cmake
+	cd /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1 && $(CMAKE_COMMAND) -P CMakeFiles/main.out.dir/cmake_clean.cmake
 .PHONY : t1/CMakeFiles/main.out.dir/clean
 
 t1/CMakeFiles/main.out.dir/depend:
-	cd /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1 /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1 /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_calibration/t1/CMakeFiles/main.out.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1 /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1 /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_calibration/t1/CMakeFiles/main.out.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : t1/CMakeFiles/main.out.dir/depend
 

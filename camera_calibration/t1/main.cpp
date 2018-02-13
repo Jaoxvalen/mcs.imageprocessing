@@ -165,11 +165,11 @@ int main()
 
 	/***/
 
-	//captureFrames("../res/videos/calibration_kinectv2.avi", "../res/images/frames/", true);
+	/*captureFrames("../res/videos/calibration_kinectv2.avi", "../res/images/frames/", true);*/
 
 
 
-	/*
+	
 	Mat frame;
 	frame = imread( "../res/images/frames/frame283.jpg");
 
@@ -180,17 +180,18 @@ int main()
 	}
 
 
-	detect_pattern(frame);
+	//detect_pattern(frame);
 	imshow("w", frame);
 
 	waitKey(); // waits to display frame
-	*/
+	
 
 
 	
 	//VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(960,540),true);
 
 
+/*
 
 	string filename("../res/videos/calibration_kinectv2.avi");
 
@@ -223,7 +224,7 @@ int main()
 
 	}
 	
-	
+	*/
 	
 
 	return 0;

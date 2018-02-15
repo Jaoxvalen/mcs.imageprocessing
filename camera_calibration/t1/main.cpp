@@ -169,7 +169,7 @@ int main()
 
 
 
-	
+	/*
 	Mat frame;
 	frame = imread( "../res/images/frames/frame283.jpg");
 
@@ -190,13 +190,16 @@ int main()
 	
 	//VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(960,540),true);
 
+*/
 
-/*
 
 	string filename("../res/videos/calibration_kinectv2.avi");
 
 	//string filename("../res/videos/calibration_ps3eyecam.avi");
-	VideoCapture capture(filename.c_str());
+	//VideoCapture capture(filename.c_str());
+
+	VideoCapture capture(0);
+
 	Mat frame;
 
 	if ( !capture.isOpened() )
@@ -224,7 +227,7 @@ int main()
 
 	}
 	
-	*/
+	
 	
 
 	return 0;

@@ -1058,3 +1058,59 @@ Linking C executable cmTC_811ac
 make[1]: Leaving directory '/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
 
 
+Determining if the include file pthread.h exists passed with the following output:
+Change Dir: /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_1b084/fast"
+/usr/bin/make -f CMakeFiles/cmTC_1b084.dir/build.make CMakeFiles/cmTC_1b084.dir/build
+make[1]: Entering directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_1b084.dir/CheckIncludeFile.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_1b084.dir/CheckIncludeFile.c.o   -c /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_1b084
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1b084.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_1b084.dir/CheckIncludeFile.c.o  -o cmTC_1b084 
+make[1]: Leaving directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+
+
+Determining if the function pthread_create exists in the pthread passed with the following output:
+Change Dir: /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_cef52/fast"
+/usr/bin/make -f CMakeFiles/cmTC_cef52.dir/build.make CMakeFiles/cmTC_cef52.dir/build
+make[1]: Entering directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_cef52.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_cef52.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
+Linking C executable cmTC_cef52
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_cef52.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_cef52.dir/CheckFunctionExists.c.o  -o cmTC_cef52 -lpthread 
+make[1]: Leaving directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file pthread.h exists passed with the following output:
+Change Dir: /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_37c94/fast"
+/usr/bin/make -f CMakeFiles/cmTC_37c94.dir/build.make CMakeFiles/cmTC_37c94.dir/build
+make[1]: Entering directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_37c94.dir/CheckIncludeFile.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_37c94.dir/CheckIncludeFile.c.o   -c /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_37c94
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_37c94.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_37c94.dir/CheckIncludeFile.c.o  -o cmTC_37c94 
+make[1]: Leaving directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+
+
+Determining if the function pthread_create exists in the pthread passed with the following output:
+Change Dir: /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_536df/fast"
+/usr/bin/make -f CMakeFiles/cmTC_536df.dir/build.make CMakeFiles/cmTC_536df.dir/build
+make[1]: Entering directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_536df.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_536df.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
+Linking C executable cmTC_536df
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_536df.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_536df.dir/CheckFunctionExists.c.o  -o cmTC_536df -lpthread 
+make[1]: Leaving directory '/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles/CMakeTmp'
+
+

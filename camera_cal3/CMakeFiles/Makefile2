@@ -54,10 +54,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal3
+CMAKE_SOURCE_DIR = /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal3
+CMAKE_BINARY_DIR = /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3
 
 #=============================================================================
 # Directory level rules for directory t1
@@ -84,7 +84,7 @@ t1/preinstall:
 t1/CMakeFiles/main.out.dir/all:
 	$(MAKE) -f t1/CMakeFiles/main.out.dir/build.make t1/CMakeFiles/main.out.dir/depend
 	$(MAKE) -f t1/CMakeFiles/main.out.dir/build.make t1/CMakeFiles/main.out.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles --progress-num=1,2 "Built target main.out"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles --progress-num=1,2 "Built target main.out"
 .PHONY : t1/CMakeFiles/main.out.dir/all
 
 # Include target in all.
@@ -94,9 +94,9 @@ all: t1/CMakeFiles/main.out.dir/all
 
 # Build rule for subdir invocation for target.
 t1/CMakeFiles/main.out.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles 2
 	$(MAKE) -f CMakeFiles/Makefile2 t1/CMakeFiles/main.out.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/CMakeFiles 0
 .PHONY : t1/CMakeFiles/main.out.dir/rule
 
 # Convenience name for target.

@@ -20,6 +20,7 @@ elseif( UNIX AND NOT APPLE )
                     main.cpp
                     )
 
+    message("foo: ${OpenCV_LIBS}")
     target_link_libraries( main.out
                            ${X11_LIBRARIES} 
                            ${CMAKE_THREAD_LIBS_INIT}

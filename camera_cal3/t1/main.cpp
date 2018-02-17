@@ -35,20 +35,23 @@ int init(int type)
 	{
 		Mat frame;
 
-		if ( !(Utils::readImageFromFile("../res/images/frames/frame340.jpg", frame)) )
+		if ( !(Utils::readImageFromFile("../res/images/frames/frame0.jpg", frame)) )
 		{
 			return -1;
 		}
 
-		imshow("frame", frame);
-
+		
 		ProcManager::INSTANCE->preProcessing(frame);
+		imshow("frame", frame);
+		waitKey(10);
 	}
 	//read video from file
 	else if ( type == OPEN_FROM_FILE_VIDEO )
 	{
 		string filename("../res/videos/calibration_ps3eyecam.avi");
 		VideoCapture capture(filename.c_str());
+		//VideoCapture capture(0);
+
 		Mat frame;
 		if ( !capture.isOpened() )
 		{
@@ -68,7 +71,7 @@ int init(int type)
 			imshow("frame" , frame);
 			waitKey(10);
 			i++;
-			cout<<i<<endl;
+			//cout<<i<<endl;
 		}
 	}
 

@@ -1,4 +1,4 @@
-# Install script for directory: /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal3/t1
+# Install script for directory: /home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal3/t1
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

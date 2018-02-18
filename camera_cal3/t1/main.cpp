@@ -59,6 +59,23 @@ int init(int type)
 			return -1;
 		}
 		int i = 0;
+		int w = -1;
+		capture >> frame;
+		i++;
+		do 
+		{
+			ProcManager::INSTANCE->preProcessing(frame);
+			imshow("frame" , frame);
+			w = waitKey();
+			if(w == 83)
+			{
+				capture >> frame;
+				i++;
+			}
+			cout<<"frame"<<i<<endl;
+		}while(w!=27);//escape
+
+		/*
 		for ( ; ; )
 		{
 			capture >> frame;
@@ -72,10 +89,10 @@ int init(int type)
 			waitKey(10);
 			i++;
 			//cout<<i<<endl;
-		}
+		}*/
 	}
 
-	waitKey();
+	//waitKey();
 
 	return 0;
 }

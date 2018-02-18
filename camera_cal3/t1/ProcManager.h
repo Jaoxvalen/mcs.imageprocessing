@@ -34,12 +34,22 @@ bool lessCompareY(const RotatedRect &a , const RotatedRect &b)
 
 bool lessCompareX(const Ellipse &a , const Ellipse &b)
 {
-	return a.element.center.x > b.element.center.x;
+	return a.element.center.x < b.element.center.x;
 }
 
 bool lessCompareY(const Ellipse &a , const Ellipse &b)
 {
-	return a.element.center.y > b.element.center.y;
+	return a.element.center.y < b.element.center.y;
+}
+
+bool thanCompareDistanceTo(const Ellipse &a, const Ellipse &b)
+{
+	return a.distanceTo > b.distanceTo;
+}
+
+bool lessCompareDistanceTo(const Ellipse &a, const Ellipse &b)
+{
+	return a.distanceTo < b.distanceTo;
 }
 
 class ProcManager
@@ -47,6 +57,7 @@ class ProcManager
 public:
 	float time;
 	vector<Ellipse> lsDetection;
+	vector< Ellipse > lsSort;
 	bool isTracking;
 
 	static ProcManager* INSTANCE;
@@ -63,7 +74,7 @@ public:
 		ProcManager::INSTANCE = new ProcManager();
 	}
 
-	bool numberChilds(vector<Vec4i>& hierarchy, int index)
+	int numberChilds(vector<Vec4i>& hierarchy, int index)
 	{
 		int child = hierarchy[index][2];
 		int i = 0;
@@ -140,7 +151,7 @@ public:
 		return index;
 	}
 
-	void drawEllipse(Mat & image, RotatedRect& ellipse)
+	void drawEllipse(Mat &image, RotatedRect& ellipse)
 	{
 		Point2f rect_points[4]; ellipse.points( rect_points );
 		for ( int k = 0; k < 4; k++ )
@@ -149,23 +160,248 @@ public:
 		}
 	}
 
+	RotatedRect media(vector<Ellipse> &ls )
+	{
+		RotatedRect element;
+		element.center.x = 0;
+		element.center.y = 0;
+		for (int i = 0; i < ls.size() ; i++ )
+		{
+			element.center += ls[i].element.center;
+		}
+		element.center = element.center / (float)ls.size();
+		element.size.width = 10;
+		element.size.height = 10;
+
+		return element;
+	}
+
+	void getDistances(vector<Ellipse> &ls, RotatedRect& e)
+	{
+		for (int i = 0; i < ls.size(); i++ )
+		{
+			ls[i].distanceTo = ls[i].distance(e.center);
+		}
+	}
+	float getTriangleArea(Point2f &p0, Point2f &p1, Point2f &p2)
+	{
+		return 	abs	(
+		            (p0.x * p1.y) + (p1.x * p2.y) + (p2.x * p0.y) -
+		            (p0.x * p2.y) - (p2.x * p1.y) - (p1.x * p0.y)
+		        ) / 2.0f;
+	}
+
+	bool inLine(Point2f a, Point2f b, Point2f x, float delta)
+	{
+		float distanceAB = distance(a, b);
+		float distanceAX = distance(a, x);
+		float distanceXB = distance(x, b);
+		if ( abs((distanceAX + distanceXB) - distanceAB) < delta )
+		{
+			return true;
+		}
+		return false;
+	}
+
+	vector< Ellipse > getInLine(vector<Ellipse> &ls, Ellipse a, Ellipse b)
+	{
+
+		vector< Ellipse > lsInline;
+		for (int i = 0; i < ls.size(); i++)
+		{
+			if 	( inLine( 	a.element.center,
+			                b.element.center,
+			                ls[i].element.center, 3.0f ) )
+			{
+				ls[i].distanceTo = ls[i].distance(a);
+				ls[i].index = i;
+				lsInline.push_back(ls[i]);
+			}
+
+		}
+		sort(lsInline.begin(), lsInline.end(), lessCompareDistanceTo);
+
+		return lsInline;
+
+	}
+
 	void tracking(Mat& image)
 	{
+
 		if (!isTracking || true)
 		{
+			lsSort.clear();
+			if ( lsDetection.size() < 20) return;
+
 			isTracking = true;
 
-			//buscar el elemento mas cercano al 0 en x
-			int p0 = mostNearX(lsDetection, 0.0f);
-			int p1 = mostFar(lsDetection, lsDetection[p0]);
-			int p2 = mostNearY(lsDetection, 0.0f);
-			int p3 = mostFar(lsDetection, lsDetection[p2]);
+			RotatedRect eMedia = media(lsDetection);
+			//drawEllipse(image, eMedia);
+			getDistances(lsDetection, eMedia);
+			sort(lsDetection.begin(), lsDetection.end(), thanCompareDistanceTo);
 
-			drawEllipse(image,lsDetection[p0].element);
-			drawEllipse(image,lsDetection[p1].element);
-			drawEllipse(image,lsDetection[p2].element);
-			drawEllipse(image,lsDetection[p3].element);
+			//corners
+			RotatedRect point0, point1, point2, point3;
+			int p[4];
+			p[0] = 0;
+			point0 = lsDetection[0].element;
+			for (int i = 1; i < lsDetection.size(); i++)
+			{
+				if (lsDetection[0].distanceTo < lsDetection[i].distance(point0.center))
+				{
+					p[1] = i;
+					point1 = lsDetection[i].element;
+					break;
+				}
+			}
 
+			//buscar el triangulo de mayor area
+			float maxArea = 0;
+			for (int i = 0; i < lsDetection.size(); i++)
+			{
+				if ( !lsDetection[i].equalCenter(point0) && !lsDetection[i].equalCenter(point1) )
+				{
+					float area = getTriangleArea(eMedia.center, point0.center, lsDetection[i].element.center);
+					if ( area > maxArea )
+					{
+						p[2] = i;
+						point2 = lsDetection[i].element;
+						maxArea = area;
+					}
+				}
+			}
+
+			//buscar el cuadrilatero de mayor area
+			maxArea = 0;
+			for (int i = 0; i < lsDetection.size(); i++)
+			{
+				if ( !lsDetection[i].equalCenter(point0) && !lsDetection[i].equalCenter(point1)
+				        && !lsDetection[i].equalCenter(point2) )
+				{
+					float area =
+					    getTriangleArea( point0.center, point1.center, lsDetection[i].element.center) +
+					    getTriangleArea( point1.center, point2.center , lsDetection[i].element.center);
+
+					if ( area > maxArea )
+					{
+						p[3] = i;
+						point3 = lsDetection[i].element;
+						maxArea = area;
+					}
+				}
+			}
+
+			//seleccionamos los corners pares frente a frente y sea la primera fila de 5
+			for (int i = 1; i < 4; i++)
+			{
+				if ( !(inLine( lsDetection[p[0]].element.center,
+				               lsDetection[p[i]].element.center, eMedia.center, 3.0f ) ) )
+				{
+
+					//check 3 inline ---> 0 x x x 0
+					int n = 0;
+					for (int k = 0; k < lsDetection.size(); k++)
+					{
+						if ( !lsDetection[k].equalCenter(lsDetection[ p[0] ]) &&
+						        !lsDetection[k].equalCenter(lsDetection[ p[i] ]))
+						{
+							if 	( inLine( 	lsDetection[ p[0] ].element.center,
+							                lsDetection[ p[i] ].element.center,
+							                lsDetection[k].element.center, 3.0f ) )
+							{
+								n++;
+							}
+						}
+
+					}
+
+					if (n == 3)
+					{
+						//hacemos el swap para que queden 0 y 1 con 2 y 3
+						int temp = p[1];
+						p[1] = p[i];
+						p[i] = temp;
+						break;
+					}
+				}
+			}
+
+			//seleccionamos los corners pares frente a frente y sea la primera columna de 4
+			for (int i = 1; i < 4; i++)
+			{
+				if ( !(inLine( lsDetection[p[0]].element.center,
+				               lsDetection[p[i]].element.center, eMedia.center, 3.0f ) ) )
+				{
+
+					//check 2 inline ---> 
+					//0 
+					//x
+					//x
+					//0
+					int n = 0;
+					for (int k = 0; k < lsDetection.size(); k++)
+					{
+						if ( !lsDetection[k].equalCenter(lsDetection[ p[0] ]) &&
+								!lsDetection[k].equalCenter(lsDetection[ p[1] ]) &&
+						        !lsDetection[k].equalCenter(lsDetection[ p[i] ]))
+						{
+							if 	( inLine( 	lsDetection[ p[0] ].element.center,
+							                lsDetection[ p[i] ].element.center,
+							                lsDetection[k].element.center, 3.0f ) )
+							{
+								n++;
+							}
+						}
+
+					}
+
+					if (n == 2)
+					{
+						//hacemos el swap para que queden 0 y 1 con 2 y 3
+						int temp = p[2];
+						p[2] = p[i];
+						p[i] = temp;
+						break;
+					}
+				}
+			}
+
+			//drawEllipse(image, lsDetection[p[0]].element);
+			//drawEllipse(image, lsDetection[p[1]].element);
+
+			//drawEllipse(image, lsDetection[p[2]].element);
+			//drawEllipse(image, lsDetection[p[3]].element);
+
+			vector< Ellipse > lsInlineA = getInLine(lsDetection, 
+											lsDetection[p[0]], lsDetection[p[1]]);
+
+			vector< Ellipse > lsInlineB = getInLine(lsDetection, 
+											lsDetection[p[2]], lsDetection[p[3]]);
+
+			if(lsInlineA.size()!=lsInlineB.size()) return;
+
+			int indice = 0;
+			for(int i = 0; i<lsInlineA.size(); i++)
+			{
+				vector< Ellipse > lsTemp = getInLine(lsDetection, 
+											lsInlineA[i], lsInlineB[i]);
+
+				for(int j = 0; j<lsTemp.size(); j++)
+				{
+					lsTemp[j].index = indice;
+					lsSort.push_back(lsTemp[j]);
+					indice++;
+				}
+			}
+		}
+
+		for (int i = 0; i < lsSort.size()-1; ++i)
+		{
+			line( image, lsSort[i].element.center, lsSort[i+1].element.center, Scalar(0,0,255), 2, 8 );
+			/*
+			putText(image, to_string( lsSort[i].index ) , 
+					lsSort[i].element.center , FONT_HERSHEY_PLAIN, 1,  
+					Scalar(0, 0, 255), 2);*/
 		}
 	}
 
@@ -190,7 +426,10 @@ public:
 
 		cvtColor(image, _procImage, CV_BGR2GRAY, 1 );
 		GaussianBlur( _procImage, _procImage, Size( 15, 15), 0, 0 );
-		adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 15, 2);
+		adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 2);
+
+
+		//Todo: erosion y dilatacion
 
 		imshow("adaptiveThreshold", _procImage);
 		//Canny( _procImage, _procImage, 100, 200, 3 );
@@ -214,7 +453,7 @@ public:
 				filters.push_back(i);
 				nNeighsCenterNear.push_back(0);
 				original[i] = minAreaRect( Mat(contours[i]) );
-				//drawContours( drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+				//drawContours( image, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
 			}
 
 		}
@@ -241,10 +480,9 @@ public:
 					if (distance( lsEllipses[i], lsEllipses[j] ) < 2.0f )
 					{
 
-						/*
-						float wDiff = abs(	max(minRect[i].size.width, minRect[i].size.height) -
-						                    max(minRect[j].size.width, minRect[j].size.height) );
-						*/
+						//nNeighsCenterNear[i] += 1;
+						
+						
 						float wDiff = abs(	max(lsEllipses[i].element.size.width, lsEllipses[i].element.size.height) -
 						                    max(lsEllipses[j].element.size.width, lsEllipses[j].element.size.height) );
 
@@ -274,6 +512,7 @@ public:
 
 
 		lsEllipses = lsEllipsesAux;
+		//cout<<"size "<<lsEllipses.size()<<endl;
 		//minRect = aux;
 
 		if (lsEllipses.empty()) return;
@@ -341,9 +580,13 @@ public:
 
 			int child = hierarchy[ lsEllipses[i].index ][2];
 
-			if ( child != -1 )
+			int nChilds = numberChilds(hierarchy, lsEllipses[i].index);
+			//if ( child != -1 )
+			if ( nChilds == 1 )
 			{
+				//cout<<"child "<<i<<" "<<child<<endl;
 
+				/*
 				float x = (original[child].center.x + lsEllipses[i].element.center.x) / 2;
 				float y = (original[child].center.y + lsEllipses[i].element.center.y) / 2;
 
@@ -356,28 +599,23 @@ public:
 				ellipseCenter.size.height = 5;
 
 				Ellipse element = Ellipse(0, ellipseCenter);
-				lsDetection.push_back(element);
+
+				//lsDetection.push_back(element);*/
+				lsEllipses[i].element.size.width = 5;
+				lsEllipses[i].element.size.height = 5;
+				lsDetection.push_back(lsEllipses[i]);
 
 				//ellipses.push_back(ellipseCenter);
 			}
 
-			/*
-			Point2f rect_points[4]; lsEllipses[i].element.points( rect_points );
-			for ( int k = 0; k < 4; k++ )
-			{
-				line( image, rect_points[k], rect_points[(k + 1) % 4], color, 1, 8 );
-			}*/
+			ellipse( image, lsEllipses[i].element , Scalar(0, 255, 0) , 2, 8 );
 		}
 
-
+		cout<<"size "<<lsDetection.size()<<endl;
 		for (int i = 0; i < lsDetection.size(); i++)
 		{
 
-			Point2f rect_points[4]; lsDetection[i].element.points( rect_points );
-			for ( int k = 0; k < 4; k++ )
-			{
-				line( image, rect_points[k], rect_points[(k + 1) % 4], Scalar(255, 255, 0), 5, 8 );
-			}
+			ellipse( image, lsDetection[i].element , Scalar(255, 255, 0) , 2, 8 );
 		}
 
 		//imshow("_procImage", drawing);

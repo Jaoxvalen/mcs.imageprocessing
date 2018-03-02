@@ -1,5 +1,7 @@
 #include "Utils.h"
 #include "ProcManager.h"
+//#include "CalibManager.h"
+#include "CalibHandler.h"
 
 #include <iostream>
 #include <string>
@@ -17,22 +19,34 @@ enum initType
 { 
 	CAPTURE_FRAMES, 
 	OPEN_FROM_FILE_IMAGE, 
-	OPEN_FROM_FILE_VIDEO 
+	OPEN_FROM_FILE_VIDEO,
+	CAPTURE_FROM_VIDEO,
+	CAPTURE_FRAMES_CALIB_CHECKBOARD,
+	CALIB_CHECKBOARD,
+	CALIB_CIRCLES_GRID,
+	CALIB_ASYMMETRIC_CIRCLES_GRID,
+	CALIB_CONCENTRIC_CIRCLES
 };
 
 int init(int type)
 {
 
-	ProcManager::create();
+	ProcManager procHandler;
+
+	//ProcManager::create();
 
 	//capture frames
 	if ( type == CAPTURE_FRAMES )
 	{
 		Utils::captureFrames("../res/videos/calibration_ps3eyecam.avi", "../res/images/frames/", true);
 	}
+
 	//open from image file
 	else if ( type == OPEN_FROM_FILE_IMAGE)
 	{
+
+		
+
 		Mat frame;
 
 		if ( !(Utils::readImageFromFile("../res/images/frames/frame0.jpg", frame)) )
@@ -40,15 +54,19 @@ int init(int type)
 			return -1;
 		}
 
-		
-		ProcManager::INSTANCE->preProcessing(frame);
+		vector<Point2f> pointBuf;
+		//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
+
+		//ProcManager procHandler;
+		procHandler.preProcessing(frame , pointBuf);
 		imshow("frame", frame);
 		waitKey(10);
 	}
 	//read video from file
 	else if ( type == OPEN_FROM_FILE_VIDEO )
 	{
-		string filename("../res/videos/calibration_ps3eyecam.avi");
+		
+		string filename("../res/videos/calibs/test4.webm");
 		VideoCapture capture(filename.c_str());
 		//VideoCapture capture(0);
 
@@ -64,7 +82,11 @@ int init(int type)
 		i++;
 		do 
 		{
-			ProcManager::INSTANCE->preProcessing(frame);
+			vector<Point2f> pointBuf;
+			//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
+
+			//ProcManager procHandler;
+			procHandler.preProcessing(frame , pointBuf);
 			imshow("frame" , frame);
 			w = waitKey();
 			if(w == 83)
@@ -72,10 +94,26 @@ int init(int type)
 				capture >> frame;
 				i++;
 			}
-			cout<<"frame"<<i<<endl;
+			//cout<<"frame"<<i<<endl;
+
 		}while(w!=27);//escape
 
-		/*
+	}
+
+	//read video from file
+	else if ( type == CAPTURE_FROM_VIDEO )
+	{
+
+		VideoCapture capture(0);
+
+		Mat frame;
+		if ( !capture.isOpened() )
+		{
+			cout << "Error when reading steam_avi" << endl;
+			return -1;
+		}
+		int i = 0;
+
 		for ( ; ; )
 		{
 			capture >> frame;
@@ -84,12 +122,31 @@ int init(int type)
 				break;
 			}
 
-			ProcManager::INSTANCE->preProcessing(frame);
+			vector<Point2f> pointBuf;
+			//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
+			
+			procHandler.preProcessing(frame , pointBuf);
 			imshow("frame" , frame);
 			waitKey(10);
 			i++;
 			//cout<<i<<endl;
-		}*/
+		}
+	}
+
+	else if( type == CALIB_CHECKBOARD )
+	{
+		CalibHandler manager(CHESSBOARD , Size(9, 6), 20.0f, "../t1/calib_chess_life.yml", "../res/videos/calibs/life_chess.webm");
+		manager.calibration();
+	}
+	else if( type == CALIB_ASYMMETRIC_CIRCLES_GRID )
+	{
+		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 20.0f, "../t1/calib_asycircles_life.yml", "../res/videos/calibs/life_asymetric.webm");
+		manager.calibration();
+	}
+	else if( type == CALIB_CONCENTRIC_CIRCLES )
+	{
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 42.0f , "../t1/calib_concentrics_life.yml", "../res/videos/calibs/life_concentrics.webm");
+		manager.calibration();
 	}
 
 	//waitKey();
@@ -99,6 +156,6 @@ int init(int type)
 
 int main()
 {
-	return init(OPEN_FROM_FILE_VIDEO);
+	return init(CALIB_CONCENTRIC_CIRCLES);
 }
 

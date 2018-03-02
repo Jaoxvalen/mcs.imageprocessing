@@ -19,6 +19,11 @@ public:
 	int index;
 	float distanceTo;
 
+	Ellipse()
+	{
+		
+	}
+
 	Ellipse(int index, RotatedRect element)
 	{
 		this->element = element;

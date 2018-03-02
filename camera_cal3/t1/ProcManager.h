@@ -32,6 +32,20 @@ bool lessCompareY(const RotatedRect &a , const RotatedRect &b)
 }
 */
 
+bool thanCompareIndex(const Ellipse &a, const Ellipse &b)
+{
+	return a.index>b.index;
+}
+
+bool lessCompareW(const Ellipse &a , const Ellipse &b)
+{
+	return a.element.size.width < b.element.size.width;
+}
+bool lessCompareH(const Ellipse &a , const Ellipse &b)
+{
+	return a.element.size.height < b.element.size.height;
+}
+
 bool lessCompareX(const Ellipse &a , const Ellipse &b)
 {
 	return a.element.center.x < b.element.center.x;
@@ -57,14 +71,24 @@ class ProcManager
 public:
 	float time;
 	vector<Ellipse> lsDetection;
-	vector< Ellipse > lsSort;
-	bool isTracking;
-
-	static ProcManager* INSTANCE;
+	vector< Ellipse > lsSort, lsSort2;
+	vector< Ellipse > lsRecovery;
+	bool isTracking, isRecovery;
+	int p[4];
+	//vector<Point2f> ROI;
+	Rect roi;
+	bool isFirtsPre;
+	//static ProcManager* INSTANCE;
+	int countFailROI;
 
 	ProcManager() {
 		isTracking = false;
+		isFirtsPre = true;
+		isRecovery = false;
+		countFailROI = 0;
 	}
+
+	/*
 	static void create()
 	{
 		if ( ProcManager::INSTANCE != NULL )
@@ -73,6 +97,7 @@ public:
 		}
 		ProcManager::INSTANCE = new ProcManager();
 	}
+	*/
 
 	int numberChilds(vector<Vec4i>& hierarchy, int index)
 	{
@@ -225,13 +250,25 @@ public:
 
 	}
 
-	void tracking(Mat& image)
+	bool tracking(Mat& image)
 	{
 
-		if (!isTracking || true)
+		//cout << "lsRecovery.size() " << lsRecovery.size() << endl;
+
+		if ( lsDetection.size() != 20)
+		{
+			if (isTracking)
+			{
+				isRecovery = true;
+			}
+			return false;
+		}
+
+
+
+		if (!isTracking)
 		{
 			lsSort.clear();
-			if ( lsDetection.size() < 20) return;
 
 			isTracking = true;
 
@@ -240,14 +277,36 @@ public:
 			getDistances(lsDetection, eMedia);
 			sort(lsDetection.begin(), lsDetection.end(), thanCompareDistanceTo);
 
+
+			//ordenar para que siempre detecte el primero
+			//por ahora el mas cercano al x=0 e y=0
+
+			float minD = INF;
+			int indexD = 0;
+			for(int i=0; i<20 ; i++)
+			{
+				float D = lsDetection[i].distance(0.0f,0.0f);
+				if(D < minD)
+				{
+					indexD = i;
+					minD = D;
+				}
+			}
+			cout<<"index "<<indexD<<endl;
+
+
 			//corners
 			RotatedRect point0, point1, point2, point3;
-			int p[4];
-			p[0] = 0;
-			point0 = lsDetection[0].element;
+			//int p[4];
+			//p[0] = 0;
+			p[0] = indexD;
+
+
+			point0 = lsDetection[p[0]].element;
+
 			for (int i = 1; i < lsDetection.size(); i++)
 			{
-				if (lsDetection[0].distanceTo < lsDetection[i].distance(point0.center))
+				if (lsDetection[p[0]].distanceTo < lsDetection[i].distance(point0.center))
 				{
 					p[1] = i;
 					point1 = lsDetection[i].element;
@@ -291,50 +350,15 @@ public:
 				}
 			}
 
-			//seleccionamos los corners pares frente a frente y sea la primera fila de 5
+			//seleccionamos los corners pares frente a frente y sea la primera fila de 4
 			for (int i = 1; i < 4; i++)
 			{
 				if ( !(inLine( lsDetection[p[0]].element.center,
 				               lsDetection[p[i]].element.center, eMedia.center, 3.0f ) ) )
 				{
 
-					//check 3 inline ---> 0 x x x 0
-					int n = 0;
-					for (int k = 0; k < lsDetection.size(); k++)
-					{
-						if ( !lsDetection[k].equalCenter(lsDetection[ p[0] ]) &&
-						        !lsDetection[k].equalCenter(lsDetection[ p[i] ]))
-						{
-							if 	( inLine( 	lsDetection[ p[0] ].element.center,
-							                lsDetection[ p[i] ].element.center,
-							                lsDetection[k].element.center, 3.0f ) )
-							{
-								n++;
-							}
-						}
-
-					}
-
-					if (n == 3)
-					{
-						//hacemos el swap para que queden 0 y 1 con 2 y 3
-						int temp = p[1];
-						p[1] = p[i];
-						p[i] = temp;
-						break;
-					}
-				}
-			}
-
-			//seleccionamos los corners pares frente a frente y sea la primera columna de 4
-			for (int i = 1; i < 4; i++)
-			{
-				if ( !(inLine( lsDetection[p[0]].element.center,
-				               lsDetection[p[i]].element.center, eMedia.center, 3.0f ) ) )
-				{
-
-					//check 2 inline ---> 
-					//0 
+					//check 2 inline --->
+					//0
 					//x
 					//x
 					//0
@@ -342,7 +366,6 @@ public:
 					for (int k = 0; k < lsDetection.size(); k++)
 					{
 						if ( !lsDetection[k].equalCenter(lsDetection[ p[0] ]) &&
-								!lsDetection[k].equalCenter(lsDetection[ p[1] ]) &&
 						        !lsDetection[k].equalCenter(lsDetection[ p[i] ]))
 						{
 							if 	( inLine( 	lsDetection[ p[0] ].element.center,
@@ -356,6 +379,42 @@ public:
 					}
 
 					if (n == 2)
+					{
+						//hacemos el swap para que queden 0 y 1 con 2 y 3
+						int temp = p[1];
+						p[1] = p[i];
+						p[i] = temp;
+						break;
+					}
+				}
+			}
+
+			//seleccionamos los corners pares frente a frente y sea la primera columna de 5
+			for (int i = 1; i < 4; i++)
+			{
+				if ( !(inLine( lsDetection[p[0]].element.center,
+				               lsDetection[p[i]].element.center, eMedia.center, 3.0f ) ) )
+				{
+					//check 3 inline ---> 0 x x x 0
+					
+					int n = 0;
+					for (int k = 0; k < lsDetection.size(); k++)
+					{
+						if ( !lsDetection[k].equalCenter(lsDetection[ p[0] ]) &&
+						        !lsDetection[k].equalCenter(lsDetection[ p[1] ]) &&
+						        !lsDetection[k].equalCenter(lsDetection[ p[i] ]))
+						{
+							if 	( inLine( 	lsDetection[ p[0] ].element.center,
+							                lsDetection[ p[i] ].element.center,
+							                lsDetection[k].element.center, 3.0f ) )
+							{
+								n++;
+							}
+						}
+
+					}
+
+					if (n == 3)
 					{
 						//hacemos el swap para que queden 0 y 1 con 2 y 3
 						int temp = p[2];
@@ -372,61 +431,457 @@ public:
 			//drawEllipse(image, lsDetection[p[2]].element);
 			//drawEllipse(image, lsDetection[p[3]].element);
 
-			vector< Ellipse > lsInlineA = getInLine(lsDetection, 
-											lsDetection[p[0]], lsDetection[p[1]]);
+			vector< Ellipse > lsInlineA = getInLine(lsDetection,
+			                                        lsDetection[p[0]], lsDetection[p[1]]);
 
-			vector< Ellipse > lsInlineB = getInLine(lsDetection, 
-											lsDetection[p[2]], lsDetection[p[3]]);
+			vector< Ellipse > lsInlineB = getInLine(lsDetection,
+			                                        lsDetection[p[2]], lsDetection[p[3]]);
 
-			if(lsInlineA.size()!=lsInlineB.size()) return;
+			if (lsInlineA.size() != lsInlineB.size())
+			{
+				if (lsSort.empty())
+				{
+					//lsSort = lsRecovery;
+					//isTracking = false;
+					isRecovery = true;
+				}
+				return false;
+			}
 
 			int indice = 0;
-			for(int i = 0; i<lsInlineA.size(); i++)
+			for (int i = 0; i < lsInlineA.size(); i++)
 			{
-				vector< Ellipse > lsTemp = getInLine(lsDetection, 
-											lsInlineA[i], lsInlineB[i]);
+				vector< Ellipse > lsTemp = getInLine(lsDetection,
+				                                     lsInlineA[i], lsInlineB[i]);
 
-				for(int j = 0; j<lsTemp.size(); j++)
+				for (int j = 0; j < lsTemp.size(); j++)
 				{
 					lsTemp[j].index = indice;
 					lsSort.push_back(lsTemp[j]);
 					indice++;
 				}
 			}
+			if (lsSort.size() == 20)
+				lsRecovery = lsSort;
+		}
+		else // if tracking
+		{
+
+			//obtenemos los valores de p[] nuevos luego debemos hacer el matcth con el ultimo bueno
+			if (isRecovery)
+			{
+
+				//cout<<"in recovery"<<endl;
+
+				lsSort.clear();
+				isRecovery = false;
+
+
+				RotatedRect eMedia = media(lsDetection);
+				//drawEllipse(image, eMedia);
+				getDistances(lsDetection, eMedia);
+				sort(lsDetection.begin(), lsDetection.end(), thanCompareDistanceTo);
+
+				//corners
+				RotatedRect point0, point1, point2, point3;
+				//int p[4];
+				p[0] = 0;
+
+				point0 = lsDetection[0].element;
+
+				for (int i = 1; i < lsDetection.size(); i++)
+				{
+					if (lsDetection[0].distanceTo < lsDetection[i].distance(point0.center))
+					{
+						p[1] = i;
+						point1 = lsDetection[i].element;
+						break;
+					}
+				}
+
+				//buscar el triangulo de mayor area
+				float maxArea = 0;
+				for (int i = 0; i < lsDetection.size(); i++)
+				{
+					if ( !lsDetection[i].equalCenter(point0) && !lsDetection[i].equalCenter(point1) )
+					{
+						float area = getTriangleArea(eMedia.center, point0.center, lsDetection[i].element.center);
+						if ( area > maxArea )
+						{
+							p[2] = i;
+							point2 = lsDetection[i].element;
+							maxArea = area;
+						}
+					}
+				}
+
+				//buscar el cuadrilatero de mayor area
+				maxArea = 0;
+				for (int i = 0; i < lsDetection.size(); i++)
+				{
+					if ( !lsDetection[i].equalCenter(point0) && !lsDetection[i].equalCenter(point1)
+					        && !lsDetection[i].equalCenter(point2) )
+					{
+						float area =
+						    getTriangleArea( point0.center, point1.center, lsDetection[i].element.center) +
+						    getTriangleArea( point1.center, point2.center , lsDetection[i].element.center);
+
+						if ( area > maxArea )
+						{
+							p[3] = i;
+							point3 = lsDetection[i].element;
+							maxArea = area;
+						}
+					}
+				}
+				//hasta aqui tenemos los nuevos p[]
+				//debemos buscar sus más cercanos con lsCorrection y hacer el match
+
+				float distMin0 =  INF;
+				float distMin1 =  INF;
+				float distMin2 =  INF;
+				float distMin3 =  INF;
+
+				int index0, index1, index2, index3;
+				for (int i = 0; i < 4; i++)
+				{
+					float distAux0 = lsRecovery[0].distance(lsDetection[p[i]]);
+					
+
+					if ( distAux0 < distMin0 )
+					{
+						distMin0 = distAux0;
+						index0 = i;
+					}
+				}
+
+				for (int i = 0; i < 4; i++)
+				{
+					if (i == index0 ) continue;
+					float distAux1 = lsRecovery[15].distance(lsDetection[p[i]]);
+
+					if ( distAux1 < distMin1 )
+					{
+						distMin1 = distAux1;
+						index1 = i;
+					}
+				}
+
+				for (int i = 0; i < 4; i++)
+				{
+					if (i == index0 || i == index1  ) continue;
+					float distAux2 = lsRecovery[4].distance(lsDetection[p[i]]);
+
+					if ( distAux2 < distMin2 )
+					{
+						distMin2 = distAux2;
+						index2 = i;
+					}
+				}
+
+				for (int i = 0; i < 4; i++)
+				{
+					if (i == index0 || i == index1 || i == index3  ) continue;
+					float distAux3 = lsRecovery[19].distance(lsDetection[p[i]]);
+
+					if ( distAux3 < distMin3 )
+					{
+						distMin3 = distAux3;
+						index3 = i;
+					}
+				}
+
+				int pAux[4];
+
+				pAux[0] = p[index0];
+				pAux[1] = p[index1];
+				pAux[2] = p[index2];
+				pAux[3] = p[index3];
+				//reordenamos p
+				p[0] = pAux[0];
+				p[1] = pAux[1];
+				p[2] = pAux[2];
+				p[3] = pAux[3];
+
+
+				//dibujar los puntos de ls recovery
+				/*
+				ellipse( image, lsRecovery[0].element , Scalar(255, 255, 0) , 5, 8 );
+				ellipse( image, lsRecovery[16].element , Scalar(255, 255, 0) , 5, 8 );
+				ellipse( image, lsRecovery[3].element , Scalar(255, 255, 0) , 5, 8 );
+				ellipse( image, lsRecovery[19].element , Scalar(255, 255, 0) , 5, 8 );
+
+				putText(image,"0" ,lsRecovery[0].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+				putText(image, "1" ,lsRecovery[16].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+				putText(image, "2" ,lsRecovery[3].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+				putText(image, "3" ,lsRecovery[19].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+
+				//dibujar los puntos calculados
+				ellipse( image, lsDetection[p[0]].element , Scalar(255, 255, 255) , 5, 8 );
+				ellipse( image, lsDetection[p[1]].element , Scalar(255, 255, 255) , 5, 8 );
+				ellipse( image, lsDetection[p[2]].element , Scalar(255, 255, 255) , 5, 8 );
+				ellipse( image, lsDetection[p[3]].element , Scalar(255, 255, 255) , 5, 8 );
+
+				putText(image, "0" ,lsDetection[p[0]].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+				putText(image, "1" ,lsDetection[p[1]].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+				putText(image, "2" ,lsDetection[p[2]].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+				putText(image, "3" ,lsDetection[p[3]].element.center , FONT_HERSHEY_PLAIN, 1,Scalar(255, 0, 255), 2);
+				*/
+
+
+				//ahora el algoritmo es el mismo que antes del tracking
+
+				vector< Ellipse > lsInlineA = getInLine(lsDetection,
+				                                        lsDetection[p[0]], lsDetection[p[1]]);
+
+				vector< Ellipse > lsInlineB = getInLine(lsDetection,
+				                                        lsDetection[p[2]], lsDetection[p[3]]);
+
+				//cout<<"lsDetection.size() "<<lsDetection.size()<<endl;
+				if (lsInlineA.size() != lsInlineB.size())
+				{
+					if (lsSort.empty())
+					{
+						//isTracking = true;
+						isRecovery = true;
+						//cout << "recovery fail" << endl;
+					}
+					return false;
+				}
+
+				int indice = 0;
+				for (int i = 0; i < lsInlineA.size(); i++)
+				{
+					vector< Ellipse > lsTemp = getInLine(lsDetection,
+					                                     lsInlineA[i], lsInlineB[i]);
+
+					for (int j = 0; j < lsTemp.size(); j++)
+					{
+						lsTemp[j].index = indice;
+						lsSort.push_back(lsTemp[j]);
+						indice++;
+					}
+				}
+				if (lsSort.size() == 20)
+					lsRecovery = lsSort;
+
+
+
+			}
+			else//if( isRecovery )
+			{
+				float minDist0 = INF;
+				float minDist1 = INF;
+				float minDist2 = INF;
+				float minDist3 = INF;
+				for (int i = 0; i < lsDetection.size(); i++)
+				{
+					float dist0 = lsDetection[i].distance(lsSort[0]);
+					if (dist0 < minDist0)
+					{
+						p[0] = i;
+						minDist0 = dist0;
+					}
+
+					float dist1 = lsDetection[i].distance(lsSort[15]);
+					if (dist1 < minDist1)
+					{
+						p[1] = i;
+						minDist1 = dist1;
+					}
+
+					float dist2 = lsDetection[i].distance(lsSort[4]);
+					if (dist2 < minDist2)
+					{
+						p[2] = i;
+						minDist2 = dist2;
+					}
+
+					float dist3 = lsDetection[i].distance(lsSort[19]);
+					if (dist3 < minDist3)
+					{
+						p[3] = i;
+						minDist3 = dist3;
+					}
+
+				}
+
+				lsSort.clear();
+				vector< Ellipse > lsInlineA = getInLine(lsDetection,
+				                                        lsDetection[p[0]], lsDetection[p[1]]);
+
+				vector< Ellipse > lsInlineB = getInLine(lsDetection,
+				                                        lsDetection[p[2]], lsDetection[p[3]]);
+
+				if (lsInlineA.size() != lsInlineB.size())
+				{
+					//isRecovery = true;
+					//lsSort = lsRecovery;
+					isTracking = false;
+					return false;
+				}
+
+				int indice = 0;
+				for (int i = 0; i < lsInlineA.size(); i++)
+				{
+					vector< Ellipse > lsTemp = getInLine(lsDetection,
+					                                     lsInlineA[i], lsInlineB[i]);
+
+					for (int j = 0; j < lsTemp.size(); j++)
+					{
+						lsTemp[j].index = indice;
+						lsSort.push_back(lsTemp[j]);
+						indice++;
+					}
+				}
+
+				if (lsSort.size() == 20)
+					lsRecovery = lsSort;
+
+			}
+
+
 		}
 
-		for (int i = 0; i < lsSort.size()-1; ++i)
+
+
+
+		//sort( lsSort.begin(), lsSort.end(), thanCompareIndex );
+		//cout<<"--------------------------------"<<endl;
+		for (int i = 0; i < lsSort.size(); ++i)
 		{
-			line( image, lsSort[i].element.center, lsSort[i+1].element.center, Scalar(0,0,255), 2, 8 );
-			/*
-			putText(image, to_string( lsSort[i].index ) , 
-					lsSort[i].element.center , FONT_HERSHEY_PLAIN, 1,  
-					Scalar(0, 0, 255), 2);*/
+
+			//cout<<"index "<<lsSort[i].index<<endl;
+			if (i != lsSort.size() - 1)
+				line( image, lsSort[i].element.center, lsSort[i + 1].element.center, Scalar(0, 0, 255), 1, 8 );
+
+			putText(image, to_string( lsSort[i].index ) ,
+			        lsSort[i].element.center , FONT_HERSHEY_PLAIN, 1,
+			        Scalar(255, 0, 255), 2);
 		}
+
+		return true;
 	}
 
-	void preProcessing(Mat& image )
+	void updateROI(Mat& image)
 	{
+
+		if ( lsDetection.size() < 20) return;
+
+
+		int minX = lsDetection[p[0]].element.center.x;
+		int minY = lsDetection[p[0]].element.center.y;
+		int maxX = lsDetection[p[0]].element.center.x;
+		int maxY = lsDetection[p[0]].element.center.y;
+
+		for ( int i = 1; i < 4; i++ )
+		{
+			float tempX = lsDetection[p[i]].element.center.x;
+			float tempY = lsDetection[p[i]].element.center.y;
+
+			if ( tempX < minX )
+			{
+				minX = tempX;
+			}
+			if ( tempY < minY )
+			{
+				minY = tempY;
+			}
+
+
+			if ( tempX > maxX )
+			{
+				maxX = tempX;
+			}
+			if ( tempY > maxY )
+			{
+				maxY = tempY;
+			}
+		}
+
+		//cout<<"! "<<minX<<" "<<minY<<endl;
+		//cout<<"! "<<maxX<<" "<<maxY<<endl;
+
+		int paddingX = (maxX - minX)/5.0f; //40;
+		int paddingY = (maxY - minY)/5.0f;//40;
+
+		//cout<<"padding "<<paddingX<<" "<<paddingY<<endl;
+
+		roi.x = max( minX - paddingX , 0 );
+		roi.y = max( minY - paddingY , 0 );
+
+		roi.width = maxX - roi.x + paddingX;
+		roi.height = maxY - roi.y + paddingY;
+
+		if (roi.x + roi.width > image.cols)
+		{
+			roi.width = image.cols - roi.x;
+		}
+
+		if (roi.y + roi.height > image.rows)
+		{
+			roi.height = image.rows - roi.y;
+		}
+
+		/*
+		cout<<"JOA"<<endl;
+		cout<<roi.x<<" "<<roi.y<<endl;
+		cout<<roi.width<<" "<<roi.height<<endl;
+		*/
+
+
+	}
+
+	bool findConcentrics( Mat& image, vector<Point2f> &pointBuf )
+	{
+		return preProcessing( image, pointBuf );
+	}
+
+	bool preProcessing(Mat& image, vector<Point2f> &pointBuf)
+	{
+
+		
+
+		pointBuf.clear();
 
 		lsDetection.clear();
 
-		vector<Ellipse> lsEllipses, lsEllipsesAux;
+		vector<Ellipse> lsEllipses, lsEllipsesAux;//, lsOriginal;
 
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-		Size size(640, 480); //the dst image size,e.g.100x100
-		resize(image, image, size);
+		//Size size(640, 480); //the dst image size,e.g.100x100
+		//resize(image, image, size);
+
+
+		if (isFirtsPre)
+		{
+			countFailROI = 0;
+			roi.x = 0.0f;
+			roi.y = 0.0f;
+			roi.width = image.cols;
+			roi.height = image.rows;
+			isFirtsPre = false;
+
+		}
+
+
 
 		RNG rng(12345);
 		int max_thresh = 255;
 		Mat _procImage;
 
+
 		vector<vector<Point> > contours;
 		vector<Vec4i> hierarchy, hierarchyFilters;
 
 		cvtColor(image, _procImage, CV_BGR2GRAY, 1 );
+
+
+		_procImage = _procImage(roi);
+
 		GaussianBlur( _procImage, _procImage, Size( 15, 15), 0, 0 );
-		adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 2);
+		adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 9, 2);
 
 
 		//Todo: erosion y dilatacion
@@ -435,6 +890,7 @@ public:
 		//Canny( _procImage, _procImage, 100, 200, 3 );
 		findContours( _procImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
+		//lsOriginal.resize( contours.size() );
 
 		Mat drawing = Mat::zeros( _procImage.size(), CV_8UC3 );
 
@@ -469,7 +925,7 @@ public:
 		}
 
 
-		if (lsEllipses.empty()) return;
+		if (lsEllipses.empty()) return false;
 
 		for (int i = 0; i < lsEllipses.size(); i++)
 		{
@@ -481,8 +937,9 @@ public:
 					{
 
 						//nNeighsCenterNear[i] += 1;
-						
-						
+
+
+
 						float wDiff = abs(	max(lsEllipses[i].element.size.width, lsEllipses[i].element.size.height) -
 						                    max(lsEllipses[j].element.size.width, lsEllipses[j].element.size.height) );
 
@@ -492,11 +949,11 @@ public:
 
 						//cout << wDiff << " " << hDiff << endl;
 
-						if ( wDiff > 4 && wDiff < 25
-						        && hDiff > 4 && hDiff < 25)
+						if ( wDiff > 4 && wDiff < 30
+						        && hDiff > 2 && hDiff < 50)
 						{
 
-
+							//cout<<"size ellipse "<<lsEllipses[i].element.size.width<<" "<<lsEllipses[i].element.size.height<<endl;
 							nNeighsCenterNear[i] += 1;
 						}
 					}
@@ -511,11 +968,68 @@ public:
 		}
 
 
-		lsEllipses = lsEllipsesAux;
+		if (lsEllipsesAux.size()<40 )
+		{
+			countFailROI ++;
+
+			if(countFailROI>10)
+			{
+				isFirtsPre = true;
+			}
+			return false;
+		}
+
+		//filtrar por la medianas del size
+		vector<Ellipse> lsMedianaChild;
+
+		for(int i=0; i<lsEllipsesAux.size(); i++)
+		{
+			int child = hierarchy[ lsEllipsesAux[i].index ][2];
+			int nChilds = numberChilds(hierarchy, lsEllipsesAux[i].index);
+			if ( nChilds == 1 )
+			{
+				lsMedianaChild.push_back(lsEllipsesAux[i]);
+
+			}
+		}
+
+
+
+		//cout<<"lsMedianaChild.size() "<<lsMedianaChild.size()<<endl;
+
+		sort(lsMedianaChild.begin(), lsMedianaChild.end(), lessCompareW);
+		float mediaW = lsMedianaChild[lsMedianaChild.size()/2].element.size.width;
+		sort(lsMedianaChild.begin(), lsMedianaChild.end(), lessCompareH);
+		float mediaH = lsMedianaChild[lsMedianaChild.size()/2].element.size.height;
+
+		//cout<<"media W H "<<mediaW<<" "<<mediaH<<endl;
+
+		lsMedianaChild.clear();
+		for(int i=0; i<lsEllipsesAux.size(); i++)
+		{
+			int child = hierarchy[ lsEllipsesAux[i].index ][2];
+			int nChilds = numberChilds(hierarchy, lsEllipsesAux[i].index);
+			if ( nChilds == 1 )
+			{
+				float diffSize = abs(lsEllipsesAux[i].element.size.width + lsEllipsesAux[i].element.size.height - mediaW - mediaH);
+				if(diffSize < 10)
+				{
+					lsMedianaChild.push_back(lsEllipsesAux[i]);
+				}
+			}
+		}
+
+		//-----------------------------
+		//cout<<"oooohwwjj"<<endl;
+
+
+		lsEllipses = lsMedianaChild; //lsEllipsesAux;
 		//cout<<"size "<<lsEllipses.size()<<endl;
 		//minRect = aux;
 
-		if (lsEllipses.empty()) return;
+		if (lsEllipses.empty()) return false;
+
+
 
 		/*
 		sort(minRect.begin(), minRect.end(), lessCompareX);
@@ -547,7 +1061,7 @@ public:
 		//cout << "minrec :" << minRect.size() << endl;
 
 		int r = 0;
-		for (r = 1; r < 200; r++)
+		for (r = 1; r < 300; r++)
 		{
 			lsEllipsesAux.clear();
 			for ( int i = 0; i < lsEllipses.size(); i++ )
@@ -559,7 +1073,7 @@ public:
 				}
 			}
 
-			if (lsEllipsesAux.size() >= 40)
+			if (lsEllipsesAux.size() >= 20)
 			{
 				//cout << "r" << r << endl;
 				break;
@@ -567,6 +1081,8 @@ public:
 
 		}
 
+
+		//cout << lsEllipsesAux.size() << endl;
 		mediana.size.width = 2 * r;
 		mediana.size.height = 2 * r;
 
@@ -575,12 +1091,22 @@ public:
 		//ellipse( image, mediana , Scalar(0, 255, 0) , 1, 8 );
 
 
+
+
+
 		for (int i = 0; i < lsEllipses.size(); i++)
 		{
 
 			int child = hierarchy[ lsEllipses[i].index ][2];
 
 			int nChilds = numberChilds(hierarchy, lsEllipses[i].index);
+
+			//roi Correction
+			lsEllipses[i].element.center.x += roi.x;
+			lsEllipses[i].element.center.y += roi.y;
+			original[child].center.x += roi.x;
+			original[child].center.y += roi.y;
+
 			//if ( child != -1 )
 			if ( nChilds == 1 )
 			{
@@ -601,38 +1127,77 @@ public:
 				Ellipse element = Ellipse(0, ellipseCenter);
 
 				//lsDetection.push_back(element);*/
-				lsEllipses[i].element.size.width = 5;
-				lsEllipses[i].element.size.height = 5;
+
+				lsEllipses[i].element.center.x = ( lsEllipses[i].element.center.x + original[child].center.x )/2.0f;			
+				lsEllipses[i].element.center.y = ( lsEllipses[i].element.center.y + original[child].center.y )/2.0f;
+
+
+
+				//lsEllipses[i].element.size.width = 1;
+				//lsEllipses[i].element.size.height = 1;
+
+
+
+
 				lsDetection.push_back(lsEllipses[i]);
 
 				//ellipses.push_back(ellipseCenter);
 			}
 
-			ellipse( image, lsEllipses[i].element , Scalar(0, 255, 0) , 2, 8 );
+			//no borrar
+			ellipse( image, lsEllipses[i].element , Scalar(0, 255, 0) , 1, 8 );
+			ellipse( image, original[child] , Scalar(255, 255, 0) , 1, 8 );
 		}
 
-		cout<<"size "<<lsDetection.size()<<endl;
+
+
+
+		//cout << "size lsDetection " << lsDetection.size() << endl;
 		for (int i = 0; i < lsDetection.size(); i++)
 		{
-
-			ellipse( image, lsDetection[i].element , Scalar(255, 255, 0) , 2, 8 );
+			//no borrar0
+			//ellipse( image, lsDetection[i].element , Scalar(255, 255, 0) , 2, 8 );
 		}
 
 		//imshow("_procImage", drawing);
 
-
-
-
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 
-		tracking(image);
+		bool ret =  tracking(image);
+
+
+		if(lsDetection.size() == 20 && !isRecovery)
+		{
+			updateROI(image);
+		}
+		else
+		{
+			isFirtsPre = true;
+		}
+		
+
 
 		time = time_span.count();
+		//cout << time << endl;
+
+		//llenamos pointbuff
+		if(ret)
+		{
+			for(int i = 0 ; i<20; i++)
+			{
+				pointBuf.push_back(lsSort[i].element.center);
+			}
+		}
+
+
+
+		return ret;
+
 
 
 	}
 
 };
-ProcManager* ProcManager::INSTANCE = NULL;
+//ProcManager* ProcManager::INSTANCE = NULL;
 }

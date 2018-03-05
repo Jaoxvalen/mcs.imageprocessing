@@ -292,7 +292,7 @@ public:
 					minD = D;
 				}
 			}
-			cout<<"index "<<indexD<<endl;
+			//cout<<"index "<<indexD<<endl;
 
 
 			//corners
@@ -969,7 +969,7 @@ public:
 		}
 
 		//todo: !=40 revisar
-		if (lsEllipsesAux.size()!=40 )
+		if (lsEllipsesAux.size()<40 )
 		{
 			countFailROI ++;
 

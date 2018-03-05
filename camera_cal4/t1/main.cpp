@@ -135,21 +135,21 @@ int init(int type)
 
 	else if( type == CALIB_CHECKBOARD )
 	{
-		CalibHandler manager(CHESSBOARD , Size(9, 6), 20.0f, "../t1/calib_chess_life.yml", 
+		CalibHandler manager(CHESSBOARD , Size(9, 6), 20.0f, "../t1/calib_chess_ps3.yml", 
 			//"../res/videos/Calibration/Camera_Play_3/ChessBoard.webm");
-			"../res/videos/Calibration/LifeCam/ChessBoard.wmv");
+			"../res/videos/calibration/PS3_chess.avi");
 		manager.calibration();
 	}
 	else if( type == CALIB_ASYMMETRIC_CIRCLES_GRID )
 	{
-		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 20.0f, "../t1/calib_asycircles_life.yml", 
-			"../res/videos/Calibration/LifeCam/Asymmetric.wmv");
+		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 20.0f, "../t1/calib_asycircles_ps3.yml", 
+			"../res/videos/calibration/PS3_asymmetric_circles.avi");
 		manager.calibration();
 	}
 	else if( type == CALIB_CONCENTRIC_CIRCLES )
 	{
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 42.0f , "../t1/calib_concentrics_life.yml", 
-			"../res/videos/Calibration/LifeCam/Rings.wmv");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 42.0f , "../t1/calib_concentrics_ps3.yml", 
+			"../res/videos/calibration/PS3_rings.avi");
 		manager.calibration();
 	}
 

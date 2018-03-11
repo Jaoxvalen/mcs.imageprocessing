@@ -51,6 +51,11 @@ public:
 	string mInputVideodir;
 	ProcManager concentricHand;
 
+	CalibHandler()
+	{
+
+	}
+
 	CalibHandler(int pTypeCalib, Size pPatternSize, float pSquareSize, const string& pOutPutdir, const string& pInputVideodir)
 	{
 		mTypeCalib = pTypeCalib;
@@ -61,7 +66,16 @@ public:
 		mInputVideodir = pInputVideodir;
 	}
 
-
+	void readParameters(const string& path, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs,  vector<Mat>& tvecs)
+	{
+		FileStorage fs;
+		fs.open(path.c_str(), FileStorage::READ);
+		fs["Camera_Matrix"] >> cameraMatrix;
+		fs["Distortion_Coefficients"] >> distCoeffs;
+		fs["Rotation_Vector"] >> rvecs;
+		fs["Translation_vector"] >> tvecs;
+		fs.release();
+	}
 
 	float AVGCheckEndColinearity(const vector< cv::Point2f >& points)
 	{
@@ -288,6 +302,10 @@ public:
 		cam = VideoCapture(mInputVideodir.c_str());
 		cam >> view;
 
+		//
+		//area = Mat(view.size());
+		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0,0,0));
+
 		if (!cam.isOpened()) {
 			cout << "Error: not open file " << mInputVideodir << endl;
 			getchar();
@@ -310,6 +328,7 @@ public:
 				}
 				auxView = view.clone();
 				temp = view.clone();
+				
 
 				vector<Point2f> pointBuf;
 				bool found;
@@ -387,10 +406,27 @@ public:
 					{
 
 						//cout<<pointBuf.size()<<endl;
+
+						imwrite( "../res/images/calibration/frames/frame_"+ to_string(nImgAdded)+".jpg", view );
 						imagePoints.push_back(pointBuf);
 						nImgAdded++;
 						cout << "image frame added " << nImg << endl;
 						cout << "image to calibration added " << nImgAdded << endl;
+
+
+						RotatedRect rt;
+						rt.size.width = 10;
+						rt.size.height = 10;
+
+						for(int i = 0; i< pointBuf.size(); i++)
+						{
+							rt.center.x = pointBuf[i].x;
+							rt.center.y = pointBuf[i].y;
+							ellipse( area, rt , Scalar(0, 255, 0) , 1, 8 );
+						}
+						
+						imshow("area", area);
+
 					}
 				}
 				if (auxView.data)

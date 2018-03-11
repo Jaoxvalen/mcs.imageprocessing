@@ -15,17 +15,18 @@ using namespace cv;
 using namespace chrono;
 using namespace vision;
 
-enum initType 
-{ 
-	CAPTURE_FRAMES, 
-	OPEN_FROM_FILE_IMAGE, 
+enum initType
+{
+	CAPTURE_FRAMES,
+	OPEN_FROM_FILE_IMAGE,
 	OPEN_FROM_FILE_VIDEO,
 	CAPTURE_FROM_VIDEO,
 	CAPTURE_FRAMES_CALIB_CHECKBOARD,
 	CALIB_CHECKBOARD,
 	CALIB_CIRCLES_GRID,
 	CALIB_ASYMMETRIC_CIRCLES_GRID,
-	CALIB_CONCENTRIC_CIRCLES
+	CALIB_CONCENTRIC_CIRCLES,
+	FRONTO_PARALLEL
 };
 
 int init(int type)
@@ -45,7 +46,7 @@ int init(int type)
 	else if ( type == OPEN_FROM_FILE_IMAGE)
 	{
 
-		
+
 
 		Mat frame;
 
@@ -65,7 +66,7 @@ int init(int type)
 	//read video from file
 	else if ( type == OPEN_FROM_FILE_VIDEO )
 	{
-		
+
 		string filename("../res/videos/Calibration/LifeCam/Rings.wmv");
 		VideoCapture capture(filename.c_str());
 		//VideoCapture capture(0);
@@ -80,7 +81,7 @@ int init(int type)
 		int w = -1;
 		capture >> frame;
 		i++;
-		do 
+		do
 		{
 			vector<Point2f> pointBuf;
 			//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
@@ -89,14 +90,14 @@ int init(int type)
 			procHandler.preProcessing(frame , pointBuf);
 			imshow("frame" , frame);
 			w = waitKey();
-			if(w == 83)
+			if (w == 83)
 			{
 				capture >> frame;
 				i++;
 			}
-			cout<<"frame"<<i<<endl;
+			cout << "frame" << i << endl;
 
-		}while(w!=27);//escape
+		} while (w != 27); //escape
 
 	}
 
@@ -124,7 +125,7 @@ int init(int type)
 
 			vector<Point2f> pointBuf;
 			//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
-			
+
 			procHandler.preProcessing(frame , pointBuf);
 			imshow("frame" , frame);
 			waitKey(10);
@@ -133,24 +134,36 @@ int init(int type)
 		}
 	}
 
-	else if( type == CALIB_CHECKBOARD )
+	else if ( type == CALIB_CHECKBOARD )
 	{
-		CalibHandler manager(CHESSBOARD , Size(9, 6), 20.0f, "../t1/calib_chess_ps3.yml", 
-			//"../res/videos/Calibration/Camera_Play_3/ChessBoard.webm");
-			"../res/videos/calibration/PS3_chess.avi");
+		CalibHandler manager(CHESSBOARD , Size(9, 6), 20.0f, "../t1/calib_chess_ps3.yml",
+		                     //"../res/videos/Calibration/Camera_Play_3/ChessBoard.webm");
+		                     "../res/videos/calibration/PS3_chess.avi");
+		//"../res/videos/calibration/LifeCam_chess.avi");
 		manager.calibration();
 	}
-	else if( type == CALIB_ASYMMETRIC_CIRCLES_GRID )
+	else if ( type == CALIB_ASYMMETRIC_CIRCLES_GRID )
 	{
-		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 20.0f, "../t1/calib_asycircles_ps3.yml", 
-			"../res/videos/calibration/PS3_asymmetric_circles.avi");
+		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 20.0f, "../t1/calib_asycircles_ps3.yml",
+		                     "../res/videos/calibration/PS3_asymmetric_circles.avi");
+		//"../res/videos/calibration/LifeCam_asymmetric_circles.avi");
 		manager.calibration();
 	}
-	else if( type == CALIB_CONCENTRIC_CIRCLES )
+	else if ( type == CALIB_CONCENTRIC_CIRCLES )
 	{
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 42.0f , "../t1/calib_concentrics_ps3.yml", 
-			"../res/videos/calibration/PS3_rings.avi");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 42.0f , "../t1/calib_concentrics_ps3.yml",
+		                     "../res/videos/calibration/PS3_rings.avi");
+		//"../res/videos/calibration/LifeCam_rings.avi");
 		manager.calibration();
+	}
+	else if ( type == FRONTO_PARALLEL )
+	{
+		CalibHandler manager;
+		Mat cameraMatrix;
+		Mat distCoeffs;
+		vector<Mat> rvecs;
+		vector<Mat> tvecs;
+		manager.readParameters("calib_chess_ps3.yml", cameraMatrix, distCoeffs, rvecs, tvecs);
 	}
 
 	//waitKey();
@@ -160,5 +173,6 @@ int init(int type)
 
 int main()
 {
-	return init(CALIB_CONCENTRIC_CIRCLES);
+
+	return init(FRONTO_PARALLEL);
 }

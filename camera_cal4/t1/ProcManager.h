@@ -753,9 +753,11 @@ public:
 		{
 
 			//cout<<"index "<<lsSort[i].index<<endl;
+
 			if (i != lsSort.size() - 1)
 				line( image, lsSort[i].element.center, lsSort[i + 1].element.center, Scalar(0, 0, 255), 1, 8 );
 
+				
 			putText(image, to_string( lsSort[i].index ) ,
 			        lsSort[i].element.center , FONT_HERSHEY_PLAIN, 1,
 			        Scalar(255, 0, 255), 2);
@@ -833,16 +835,17 @@ public:
 
 	}
 
-	bool findConcentrics( Mat& image, vector<Point2f> &pointBuf )
+	bool findConcentrics( Mat& image, vector<Point2f> &pointBuf, Mat& view )
 	{
-		return preProcessing( image, pointBuf );
+		view = image.clone();
+		return preProcessing( image, pointBuf, view );
 	}
 
-	bool preProcessing(Mat& image, vector<Point2f> &pointBuf)
+	bool preProcessing(Mat& image, vector<Point2f> &pointBuf, Mat& view)
 	{
 
 		
-
+		
 		pointBuf.clear();
 
 		lsDetection.clear();
@@ -1148,8 +1151,8 @@ public:
 			}
 
 			//no borrar
-			ellipse( image, lsEllipses[i].element , Scalar(0, 255, 0) , 1, 8 );
-			ellipse( image, original[child] , Scalar(255, 255, 0) , 1, 8 );
+			ellipse( view, lsEllipses[i].element , Scalar(0, 255, 0) , 1, 8 );
+			ellipse( view, original[child] , Scalar(255, 255, 0) , 1, 8 );
 		}
 
 
@@ -1167,13 +1170,13 @@ public:
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 
-		bool ret =  tracking(image);
+		bool ret =  tracking(view);
 
 
 
 		if(lsDetection.size() == 20 && !isRecovery)
 		{
-			updateROI(image);
+			updateROI(view);
 		}
 		else
 		{

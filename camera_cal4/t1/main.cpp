@@ -59,7 +59,7 @@ int init(int type)
 		//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
 
 		//ProcManager procHandler;
-		procHandler.preProcessing(frame , pointBuf);
+		procHandler.preProcessing(frame , pointBuf,frame);
 		imshow("frame", frame);
 		waitKey(10);
 	}
@@ -87,7 +87,7 @@ int init(int type)
 			//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
 
 			//ProcManager procHandler;
-			procHandler.preProcessing(frame , pointBuf);
+			procHandler.preProcessing(frame , pointBuf, frame);
 			imshow("frame" , frame);
 			w = waitKey();
 			if (w == 83)
@@ -126,7 +126,7 @@ int init(int type)
 			vector<Point2f> pointBuf;
 			//ProcManager::INSTANCE->preProcessing(frame, pointBuf);
 
-			procHandler.preProcessing(frame , pointBuf);
+			procHandler.preProcessing(frame , pointBuf, frame);
 			imshow("frame" , frame);
 			waitKey(10);
 			i++;
@@ -156,11 +156,29 @@ int init(int type)
 		//"../res/videos/calibration/LifeCam_rings.avi");
 		manager.calibration();
 	}
-
 	else if ( type == FRONTO_PARALLEL )
 	{
+		cout<<"hola"<<endl;
 		CalibHandler manager;
-		manager.transFrontoParallel("calib_chess_ps3.yml", "../res/images/calibration/frames/");
+		int type_choose = 2;
+		string frames;
+		Size mPatternSize;
+		switch(type_choose) {
+		    case 1 : 
+		    		//chessboard
+		    		mPatternSize = Size(9, 6);
+		    		frames = "frames/";
+	    			break;
+
+		    case 2 : 
+		    		//rings
+		    		mPatternSize = Size(5, 4);
+		    		frames = "frames_rings/";
+	    			break;
+		}
+
+
+		manager.calculatePerspective("calib_chess_ps3.yml", "../res/images/calibration/"+ frames, mPatternSize, type_choose);
 	}
 
 	//waitKey();
@@ -172,4 +190,5 @@ int main()
 {
 
 	return init(FRONTO_PARALLEL);
+
 }

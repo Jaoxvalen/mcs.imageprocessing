@@ -50,6 +50,8 @@ public:
 	string mOutPutdir;
 	string mInputVideodir;
 	ProcManager concentricHand;
+	vector<Point2f> inputQuad;
+	vector<Point2f> outputQuad;
 
 	CalibHandler()
 	{
@@ -66,11 +68,8 @@ public:
 		mInputVideodir = pInputVideodir;
 	}
 
-
-	void readParameters(const string& path, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs, vector<Mat>& tvecs)
+	void readParameters(const string& path, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs,  vector<Mat>& tvecs)
 	{
-
-		//read parameters
 		FileStorage fs;
 		fs.open(path.c_str(), FileStorage::READ);
 		fs["Camera_Matrix"] >> cameraMatrix;
@@ -80,7 +79,67 @@ public:
 		fs.release();
 	}
 
-	void transFrontoParallel(const string& pathParameters, const string& pathFrames)
+
+	void calculatePoints(Mat& input, Size mPatternSize, int type )
+	{
+		/*hallando esquinas*/
+	    vector<Point2f> pointBuf;
+		Mat view = input;
+		int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
+		float size;// = 100;
+	 	float offset;// = size/(2.5);//50;
+
+		switch(type) {
+		    case 1 : 
+		    		//chessboard
+		    		cout<<"mPatternSize : "<<mPatternSize<<endl;
+	    			findChessboardCorners( view, mPatternSize, pointBuf, chessBoardFlags);
+	    			size = 60;
+	    			offset = size/(2.5);
+	    			break;
+
+		    case 2 : 
+		    		//rings
+		    		ProcManager concentricHand2;
+		    		Mat auxView = input;
+		    		concentricHand.findConcentrics(input, pointBuf, auxView);
+		    		cout<<"pointBuf[0]"<<pointBuf[0]<<endl;
+		    		size = input.cols/6.0f;
+	    			offset = -size/3.8f;
+		    		break;
+		}
+
+		
+		int width = mPatternSize.width;
+	 	int height = mPatternSize.height;
+
+	    cout<<"pointBuf[0]"<<pointBuf[0]<<endl;
+	    cout<<"pointBuf[1]"<<pointBuf[width-1]<<endl;
+	    cout<<"pointBuf[2]"<<pointBuf[width*height -1]<<endl;
+	    cout<<"pointBuf[3]"<<pointBuf[width*(height-1)]<<endl;
+	    cout<<"size of pointBuf : "<< pointBuf.size()<<endl;
+
+	    inputQuad[0] = pointBuf[0];
+	    inputQuad[1] = pointBuf[width-1];
+	    inputQuad[2] = pointBuf[width*height -1];
+	    inputQuad[3] = pointBuf[width*(height-1)];
+
+	    /*
+	    for( int i = 0; i<4; i++ )
+	    {
+	    	circle(input, inputQuad[i], 5, Scalar(255,0,0), 1,8);
+	    }*/
+	    
+
+	    // The 4 points where the mapping is to be done , from top-left in clockwise order
+	    
+	    outputQuad[0] = Point2f( size + offset, size + offset);
+	    outputQuad[1] = Point2f( width*size + offset, size + offset);
+	    outputQuad[2] = Point2f( width*size + offset, height*size + offset);
+	    outputQuad[3] = Point2f( size + offset, height*size + offset);
+	}	
+
+	void calculatePerspective(const string& pathParameters, const string& pathFrames, Size mPatternSize , int type_choose)
 	{
 		int key;
 		Mat cameraMatrix;
@@ -91,113 +150,84 @@ public:
 		vector<Mat> frames, frameUndist;
 
 		//FOR REMAP
-		Mat map1, map2;
 
+		Mat map1, map2;
 
 		//leer y undistort para la imagen 0
 		Mat image = imread(pathFrames + "frame_0.jpg");
 		if (!image.data )
+
 		{
+
 			cout << "Image no read" << endl;
 			return;
+
 		}
+
 		initUndistortRectifyMap( cameraMatrix, distCoeffs, Mat(), Mat(), image.size(), CV_16SC2, map1, map2);
 		remap(image, image, map1, map2, INTER_LINEAR);
 		frames.push_back(image);
 
 		//para el resto de imagenes
 		for (int i = 1; i < rvecs.size(); i++)
+
 		{
 
 			image = imread(pathFrames + "frame_" + to_string(i) + ".jpg");
 
 			if (!image.data )
 			{
+
 				cout << "Image no read" << endl;
+
 				return;
 			}
+
 			remap(image, image, map1, map2, INTER_LINEAR);
 			frames.push_back(image);
 		}
-
-
-		double fx = cameraMatrix.at<double>(0, 0);
-		double cx = cameraMatrix.at<double>(0, 2);
-		double fy = cameraMatrix.at<double>(1, 1);
-		double cy = cameraMatrix.at<double>(1, 2);
-
-		Mat rotMatrix, invRotMatrix;
-
-		int nFrame = 23;
-
-		Rodrigues(rvecs[nFrame], rotMatrix);
-		invRotMatrix = rotMatrix.inv();
-
 		
+		int nFrame = 17;
 
 		image = frames[nFrame];
-		//Mat result = image.clone();
-		Mat result(image.rows, image.cols, CV_8UC3, Scalar(0, 0, 0));
 
-		imshow("original", image);
+		// Lambda Matrix
+	    Mat lambda( 2, 4, CV_32FC1 );
+	    //Input and Output Image;
+	    Mat input, output;
+	     
+	    //Load the image
+	    input = image;
+	    // Set the lambda matrix the same type and size as input
+	    lambda = Mat::zeros( input.rows, input.cols, input.type() );
+	 
+	    // The 4 points that select quadilateral on the input , from top-left in clockwise order
+	    // These four pts are the sides of the rect box used as input 
 
-		for ( int u = 0; u < image.rows; u++ )
-		{
-			for (int v = 0; v < image.cols; v++)
-			{
+	    inputQuad.resize(4);
+	    outputQuad.resize(4);
 
-				Point3d pA, pB, pDir, pR;
-				//calculamos x' e y' para z = 1
-				pA.x = (u - cx) / fx;
-				pA.y = (v - cy) / fy;
-				pA.z = 1.0f;
-				//calculamos x' e y' para z = 2
-				pB.x = 2 * (u - cx) / fx;
-				pB.y = 2 * (v - cy) / fy;
-				pB.z = 2.0f;
-
-				Mat mPA = (Mat_<double>(3, 1) << pA.x, pA.y, pA.z);
-				Mat mPB = (Mat_<double>(3, 1) << pB.x, pB.y, pB.z);
-
-				//debemos aplicar la inversa de la rotacion a ambos puntos
-				mPA = invRotMatrix * mPA;
-				mPB = invRotMatrix * mPB;
-
-				//ahora calculamos para Z = 0 en el nuevo sistema de coordenadas
-
-				pA.x = mPA.at<double>(0, 0);
-				pA.y = mPA.at<double>(1, 0);
-				pA.z = mPA.at<double>(2, 0);
-
-				pB.x = mPB.at<double>(0, 0);
-				pB.y = mPB.at<double>(1, 0);
-				pB.z = mPB.at<double>(2, 0);
-
-				pDir = pB - pA;
-
-				//calculamos el punto para un t = -1
-				pR = pA - pDir*(-1.0f);
-
-				//calculamos el nuevo U,V
-				float uC = (fx * pR.x + cx)+200;
-				float vC = (fy * pR.y + cy)-500;
-
-
-				if (uC >= 0 && uC < image.rows && vC >= 0 && vC < image.cols)
-				{
-					Vec3b color = image.at<Vec3b>(uC, vC);
-					result.at<Vec3b>(u, v) = color;
-				}
-			}
-		}
-
-		imshow("result", result);
-
-
-		key = waitKey();
+	    //calculatePoints(input,1);
+	    calculatePoints(input, mPatternSize, type_choose);
+	    cout<<inputQuad[0]<<endl;
+	    cout<<inputQuad[1]<<endl;
+	    cout<<inputQuad[2]<<endl;
+	    cout<<inputQuad[3]<<endl;
+		
+	    // Get the Perspective Transform Matrix i.e. lambda 
+	    lambda = getPerspectiveTransform( inputQuad, outputQuad );
+	    // Apply the Perspective Transform just found to the src image
+	    warpPerspective(input,output,lambda,output.size() );
+	 
+	    //Display input and output
+	    namedWindow( "Input", WINDOW_AUTOSIZE );// Create a window for display.
+	    imshow("Input",input);
+	    namedWindow( "Output", WINDOW_AUTOSIZE );// Create a window for display.
+	    imshow("Output",output);
+	 
+	    waitKey(0);
 
 	}
-
 
 	float AVGCheckEndColinearity(const vector< cv::Point2f >& points)
 	{
@@ -426,7 +456,7 @@ public:
 
 		//
 		//area = Mat(view.size());
-		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0, 0, 0));
+		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0,0,0));
 
 		if (!cam.isOpened()) {
 			cout << "Error: not open file " << mInputVideodir << endl;
@@ -450,7 +480,7 @@ public:
 				}
 				auxView = view.clone();
 				temp = view.clone();
-
+				
 
 				vector<Point2f> pointBuf;
 				bool found;
@@ -501,7 +531,7 @@ public:
 				}
 				else if ( mTypeCalib == CONCENTRIC_CIRCLES )
 				{
-					found = concentricHand.findConcentrics(auxView, pointBuf);
+					found = concentricHand.findConcentrics(view, pointBuf, auxView);
 				}
 				else
 				{
@@ -529,7 +559,7 @@ public:
 
 						//cout<<pointBuf.size()<<endl;
 
-						imwrite( "../res/images/calibration/frames/frame_" + to_string(nImgAdded) + ".jpg", view );
+						imwrite( "../res/images/calibration/frames/frame_"+ to_string(nImgAdded)+".jpg", view );
 						imagePoints.push_back(pointBuf);
 						nImgAdded++;
 						cout << "image frame added " << nImg << endl;
@@ -540,13 +570,13 @@ public:
 						rt.size.width = 10;
 						rt.size.height = 10;
 
-						for (int i = 0; i < pointBuf.size(); i++)
+						for(int i = 0; i< pointBuf.size(); i++)
 						{
 							rt.center.x = pointBuf[i].x;
 							rt.center.y = pointBuf[i].y;
 							ellipse( area, rt , Scalar(0, 255, 0) , 1, 8 );
 						}
-
+						
 						imshow("area", area);
 
 					}
@@ -640,8 +670,8 @@ public:
 							ProcManager concentricHandA;
 							ProcManager concentricHandB;
 
-							foundA = concentricHandA.findConcentrics(view, pointBufA);
-							foundB = concentricHandB.findConcentrics(rview, pointBufB);
+							foundA = concentricHandA.findConcentrics(view, pointBufA, view);
+							foundB = concentricHandB.findConcentrics(rview, pointBufB, rview);
 						}
 						else
 						{

@@ -156,14 +156,11 @@ int init(int type)
 		//"../res/videos/calibration/LifeCam_rings.avi");
 		manager.calibration();
 	}
+
 	else if ( type == FRONTO_PARALLEL )
 	{
 		CalibHandler manager;
-		Mat cameraMatrix;
-		Mat distCoeffs;
-		vector<Mat> rvecs;
-		vector<Mat> tvecs;
-		manager.readParameters("calib_chess_ps3.yml", cameraMatrix, distCoeffs, rvecs, tvecs);
+		manager.transFrontoParallel("calib_chess_ps3.yml", "../res/images/calibration/frames/");
 	}
 
 	//waitKey();

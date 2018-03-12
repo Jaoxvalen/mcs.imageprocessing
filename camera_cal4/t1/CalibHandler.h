@@ -66,8 +66,11 @@ public:
 		mInputVideodir = pInputVideodir;
 	}
 
-	void readParameters(const string& path, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs,  vector<Mat>& tvecs)
+
+	void readParameters(const string& path, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs, vector<Mat>& tvecs)
 	{
+
+		//read parameters
 		FileStorage fs;
 		fs.open(path.c_str(), FileStorage::READ);
 		fs["Camera_Matrix"] >> cameraMatrix;
@@ -76,6 +79,125 @@ public:
 		fs["Translation_vector"] >> tvecs;
 		fs.release();
 	}
+
+	void transFrontoParallel(const string& pathParameters, const string& pathFrames)
+	{
+		int key;
+		Mat cameraMatrix;
+		Mat distCoeffs;
+		vector<Mat> rvecs;
+		vector<Mat> tvecs;
+		readParameters(pathParameters, cameraMatrix, distCoeffs, rvecs, tvecs);
+		vector<Mat> frames, frameUndist;
+
+		//FOR REMAP
+		Mat map1, map2;
+
+
+		//leer y undistort para la imagen 0
+		Mat image = imread(pathFrames + "frame_0.jpg");
+		if (!image.data )
+		{
+			cout << "Image no read" << endl;
+			return;
+		}
+		initUndistortRectifyMap( cameraMatrix, distCoeffs, Mat(), Mat(), image.size(), CV_16SC2, map1, map2);
+		remap(image, image, map1, map2, INTER_LINEAR);
+		frames.push_back(image);
+
+		//para el resto de imagenes
+		for (int i = 1; i < rvecs.size(); i++)
+		{
+
+			image = imread(pathFrames + "frame_" + to_string(i) + ".jpg");
+
+			if (!image.data )
+			{
+				cout << "Image no read" << endl;
+				return;
+			}
+			remap(image, image, map1, map2, INTER_LINEAR);
+			frames.push_back(image);
+		}
+
+
+		double fx = cameraMatrix.at<double>(0, 0);
+		double cx = cameraMatrix.at<double>(0, 2);
+		double fy = cameraMatrix.at<double>(1, 1);
+		double cy = cameraMatrix.at<double>(1, 2);
+
+		Mat rotMatrix, invRotMatrix;
+
+		int nFrame = 23;
+
+		Rodrigues(rvecs[nFrame], rotMatrix);
+		invRotMatrix = rotMatrix.inv();
+
+		
+
+		image = frames[nFrame];
+		//Mat result = image.clone();
+		Mat result(image.rows, image.cols, CV_8UC3, Scalar(0, 0, 0));
+
+		imshow("original", image);
+
+		for ( int u = 0; u < image.rows; u++ )
+		{
+			for (int v = 0; v < image.cols; v++)
+			{
+
+				Point3d pA, pB, pDir, pR;
+				//calculamos x' e y' para z = 1
+				pA.x = (u - cx) / fx;
+				pA.y = (v - cy) / fy;
+				pA.z = 1.0f;
+				//calculamos x' e y' para z = 2
+				pB.x = 2 * (u - cx) / fx;
+				pB.y = 2 * (v - cy) / fy;
+				pB.z = 2.0f;
+
+				Mat mPA = (Mat_<double>(3, 1) << pA.x, pA.y, pA.z);
+				Mat mPB = (Mat_<double>(3, 1) << pB.x, pB.y, pB.z);
+
+				//debemos aplicar la inversa de la rotacion a ambos puntos
+				mPA = invRotMatrix * mPA;
+				mPB = invRotMatrix * mPB;
+
+				//ahora calculamos para Z = 0 en el nuevo sistema de coordenadas
+
+				pA.x = mPA.at<double>(0, 0);
+				pA.y = mPA.at<double>(1, 0);
+				pA.z = mPA.at<double>(2, 0);
+
+				pB.x = mPB.at<double>(0, 0);
+				pB.y = mPB.at<double>(1, 0);
+				pB.z = mPB.at<double>(2, 0);
+
+				pDir = pB - pA;
+
+				//calculamos el punto para un t = -1
+				pR = pA - pDir*(-1.0f);
+
+				//calculamos el nuevo U,V
+				float uC = (fx * pR.x + cx)+200;
+				float vC = (fy * pR.y + cy)-500;
+
+
+				if (uC >= 0 && uC < image.rows && vC >= 0 && vC < image.cols)
+				{
+					Vec3b color = image.at<Vec3b>(uC, vC);
+					result.at<Vec3b>(u, v) = color;
+				}
+			}
+		}
+
+		imshow("result", result);
+
+
+		key = waitKey();
+
+	}
+
 
 	float AVGCheckEndColinearity(const vector< cv::Point2f >& points)
 	{
@@ -304,7 +426,7 @@ public:
 
 		//
 		//area = Mat(view.size());
-		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0,0,0));
+		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0, 0, 0));
 
 		if (!cam.isOpened()) {
 			cout << "Error: not open file " << mInputVideodir << endl;
@@ -328,7 +450,7 @@ public:
 				}
 				auxView = view.clone();
 				temp = view.clone();
-				
+
 
 				vector<Point2f> pointBuf;
 				bool found;
@@ -407,7 +529,7 @@ public:
 
 						//cout<<pointBuf.size()<<endl;
 
-						imwrite( "../res/images/calibration/frames/frame_"+ to_string(nImgAdded)+".jpg", view );
+						imwrite( "../res/images/calibration/frames/frame_" + to_string(nImgAdded) + ".jpg", view );
 						imagePoints.push_back(pointBuf);
 						nImgAdded++;
 						cout << "image frame added " << nImg << endl;
@@ -418,13 +540,13 @@ public:
 						rt.size.width = 10;
 						rt.size.height = 10;
 
-						for(int i = 0; i< pointBuf.size(); i++)
+						for (int i = 0; i < pointBuf.size(); i++)
 						{
 							rt.center.x = pointBuf[i].x;
 							rt.center.y = pointBuf[i].y;
 							ellipse( area, rt , Scalar(0, 255, 0) , 1, 8 );
 						}
-						
+
 						imshow("area", area);
 
 					}

@@ -106,6 +106,8 @@ public:
 			//cout<<"pointBuf[0]"<<pointBuf[0]<<endl;
 			size = input.cols / 8.0f;
 			offset = -size / 3.8f;
+
+
 			break;
 		}
 
@@ -157,6 +159,9 @@ public:
 		vector<Mat> rvecs;
 		vector<Mat> tvecs;
 		readParameters(pathParameters, cameraMatrix, distCoeffs, rvecs, tvecs);
+
+
+
 		vector<Mat> frames, frameUndist;
 
 		//FOR REMAP
@@ -178,6 +183,8 @@ public:
 		remap(image, image, map1, map2, INTER_LINEAR);
 		frames.push_back(image);
 
+
+
 		//para el resto de imagenes
 		for (int i = 1; i < rvecs.size(); i++)
 
@@ -198,7 +205,7 @@ public:
 		}
 
 		image = frames[nFrame];
-		Mat lambda( 2, 4, CV_32FC1 );
+		Mat lambda;//( 2, 4, CV_32FC1 );
 		Mat input, output;
 
 		input = image;
@@ -209,21 +216,42 @@ public:
 		outputQuad.resize(4);
 
 		Size outSize ;
+
 		calculatePoints(input, mPatternSize, type_choose, outSize);
 
 		lambda = getPerspectiveTransform( inputQuad, outputQuad );
 
 		warpPerspective(input, output, lambda, outSize );
 
-
 		bool found = false;
+		vector<Point2f> pointBuf, pointBufCorrec;
 
 		if (type_choose == CONCENTRIC_CIRCLES)
 		{
 			ProcManager manager;
-			vector<Point2f> pointBuf;
 			found = manager.findConcentrics(output, pointBuf, output);
 		}
+
+		if (found)
+		{
+			for (int i = 0; i < pointBuf.size(); i++)
+			{
+				Mat p = (Mat_<double>(3, 1) << pointBuf[i].x , pointBuf[i].y, 0.0f);
+				cout << "Control point fp: " << p << endl;
+				p = lambda.inv() * p;
+				cout << "Control point n: " << p << endl;
+				Point2f pCorrec;
+				pCorrec.x = p.at<double>(0, 0);
+				pCorrec.y = p.at<double>(1, 0);
+				pointBufCorrec.push_back( pCorrec );
+			}
+			for ( int i = 0; i < pointBufCorrec.size(); i++ )
+			{
+				circle(input, pointBufCorrec[i], 1, Scalar(255, 0, 0), 2, 8);
+			}
+
+		}
+
 
 
 		cout << "FOUND " << found << endl;

@@ -162,22 +162,25 @@ int init(int type)
 		int type_choose = CONCENTRIC_CIRCLES;
 		string frames;
 		Size mPatternSize;
+		string parameters;
 		switch(type_choose) {
 		    case CHESSBOARD : 
 		    		//chessboard
 		    		mPatternSize = Size(9, 6);
 		    		frames = "frames/";
+		    		parameters = "calib_chess_ps3.yml";
 	    			break;
 
 		    case CONCENTRIC_CIRCLES : 
 		    		//rings
 		    		mPatternSize = Size(5, 4);
 		    		frames = "frames_rings/";
+		    		parameters = "calib_concentrics_ps3.yml";
 	    			break;
 		}
 
-
-		manager.calculatePerspective("calib_chess_ps3.yml", "../res/images/calibration/"+ frames, mPatternSize, type_choose);
+		cout<<parameters<<endl;
+		manager.calculatePerspective(parameters, "../res/images/calibration/"+ frames, mPatternSize, type_choose);
 	}
 
 	//waitKey();

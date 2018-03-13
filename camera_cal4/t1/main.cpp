@@ -158,19 +158,18 @@ int init(int type)
 	}
 	else if ( type == FRONTO_PARALLEL )
 	{
-		cout<<"hola"<<endl;
 		CalibHandler manager;
-		int type_choose = 2;
+		int type_choose = CONCENTRIC_CIRCLES;
 		string frames;
 		Size mPatternSize;
 		switch(type_choose) {
-		    case 1 : 
+		    case CHESSBOARD : 
 		    		//chessboard
 		    		mPatternSize = Size(9, 6);
 		    		frames = "frames/";
 	    			break;
 
-		    case 2 : 
+		    case CONCENTRIC_CIRCLES : 
 		    		//rings
 		    		mPatternSize = Size(5, 4);
 		    		frames = "frames_rings/";

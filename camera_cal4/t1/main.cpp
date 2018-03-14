@@ -163,12 +163,14 @@ int init(int type)
 		string frames;
 		Size mPatternSize;
 		string parameters;
+		float sizePattern = 1.0f;
 		switch(type_choose) {
 		    case CHESSBOARD : 
 		    		//chessboard
 		    		mPatternSize = Size(9, 6);
-		    		frames = "frames/";
+		    		frames = "frames_chess/";
 		    		parameters = "calib_chess_ps3.yml";
+		    		sizePattern = 20.0f;
 	    			break;
 
 		    case CONCENTRIC_CIRCLES : 
@@ -176,11 +178,12 @@ int init(int type)
 		    		mPatternSize = Size(5, 4);
 		    		frames = "frames_rings/";
 		    		parameters = "calib_concentrics_ps3.yml";
+		    		sizePattern = 42.0f;
 	    			break;
 		}
 
 		cout<<parameters<<endl;
-		manager.calculatePerspective(parameters, "../res/images/calibration/"+ frames, mPatternSize, type_choose);
+		manager.refineControlPoints(parameters, "../res/images/calibration/"+ frames, mPatternSize, type_choose, sizePattern);
 	}
 
 	//waitKey();
@@ -190,6 +193,9 @@ int init(int type)
 
 int main()
 {
+	/*
+	cout << "cv's build information" << endl;
+	cout << cv::getBuildInformation() << endl;*/
 
 	return init(FRONTO_PARALLEL);
 

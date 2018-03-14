@@ -50,8 +50,7 @@ public:
 	string mOutPutdir;
 	string mInputVideodir;
 	ProcManager concentricHand;
-	vector<Point2f> inputQuad;
-	vector<Point2f> outputQuad;
+
 
 	CalibHandler()
 	{
@@ -79,30 +78,31 @@ public:
 		fs.release();
 	}
 
-
-	void calculatePoints(Mat& input, Size mPatternSize, int type , Size& sizeOut)
+	bool calculatePoints(Mat& input, Size mPatternSize, int type , Size& sizeOut, vector<Point2f> &inputQuad, vector<Point2f> &outputQuad, float& offset)
 	{
 		/*hallando esquinas*/
 		vector<Point2f> pointBuf;
 		Mat view = input;
 		int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
 		float size;// = 100;
-		float offset;// = size/(2.5);//50;
+		//float offset;// = size/(2.5);//50;
+
+		bool found = false;
 
 		switch (type) {
 		case CHESSBOARD :
 			//chessboard
 			//cout<<"mPatternSize : "<<mPatternSize<<endl;
-			findChessboardCorners( view, mPatternSize, pointBuf, chessBoardFlags);
-			size = 60;
-			offset = size / (2.5);
+			found = findChessboardCorners( view, mPatternSize, pointBuf, chessBoardFlags);
+			size = input.cols / 10.0f;
+			offset = -size / (3.8);
 			break;
 
 		case CONCENTRIC_CIRCLES :
 			//rings
 			ProcManager concentricHand2;
 			Mat auxView = input;
-			concentricHand.findConcentrics(input, pointBuf, auxView);
+			found = concentricHand2.findConcentrics(input, pointBuf, auxView);
 			//cout<<"pointBuf[0]"<<pointBuf[0]<<endl;
 			size = input.cols / 8.0f;
 			offset = -size / 3.8f;
@@ -110,6 +110,9 @@ public:
 
 			break;
 		}
+
+		//se nao pode-se encontrar os pontos de control entao retornar false
+		if (!found) return false;
 
 
 		int width = mPatternSize.width;
@@ -144,120 +147,308 @@ public:
 		sizeOut.height = outputQuad[3].y - outputQuad[1].y + 2 * (-offset) + size;
 
 
+		return true;
 
+		/*
+		for ( int i = 0; i < pointBuf.size(); i++ )
+		{
+			circle(input, pointBuf[i], 1, Scalar(0, 0, 255), 2, 8);
+		}
+		*/
+	}
+
+
+	Point2d distortPoint(Point2d undistorted_point, Mat camera_matrix, vector<double> distort_coefficients) {
+
+		// Check that camera matrix is double
+		if (!(camera_matrix.type() == CV_64F || camera_matrix.type() == CV_64FC1)) {
+			std::ostringstream oss;
+			oss << "distortPoint(): Camera matrix type is wrong. It has to be a double matrix (CV_64)";
+			throw std::runtime_error(oss.str());
+		}
+
+		// Create distorted point
+		cv::Point2d distortedPoint;
+		distortedPoint.x = (undistorted_point.x - camera_matrix.at<double>(0, 2)) / camera_matrix.at<double>(0, 0);
+		distortedPoint.y = (undistorted_point.y - camera_matrix.at<double>(1, 2)) / camera_matrix.at<double>(1, 1);
+
+		// Get model
+		if (distort_coefficients.size() < 4 || distort_coefficients.size() > 8 ) {
+			throw std::runtime_error("distortPoint(): Invalid numbrer of distortion coefficitnes.");
+		}
+		double k1(distort_coefficients[0]);
+		double k2(distort_coefficients[1]);
+		double p1(distort_coefficients[2]);// tangent distortion first coeficinet
+		double p2(distort_coefficients[3]);// tangent distortion second coeficinet
+		double k3(0);
+		double k4(0);
+		double k5(0);
+		double k6(0);
+		if (distort_coefficients.size() > 4)
+			k3 = distort_coefficients[4];
+		if (distort_coefficients.size() > 5)
+			k4 = distort_coefficients[5];
+		if (distort_coefficients.size() > 6)
+			k5 = distort_coefficients[6];
+		if (distort_coefficients.size() > 7)
+			k6 = distort_coefficients[7];
+
+		// Distort
+		double xcx = distortedPoint.x;
+		double ycy = distortedPoint.y;
+		double r2 = pow(xcx, 2) + pow(ycy, 2);
+		double r4 = pow(r2, 2);
+		double r6 = pow(r2, 3);
+		double k = (1 + k1 * r2 + k2 * r4 + k3 * r6) / (1 + k4 * r2 + k5 * r4 + k5 * r6);
+		distortedPoint.x = xcx * k + 2 * p1 * xcx * ycy + p2 * (r2 + 2 * pow(xcx, 2));
+		distortedPoint.y = ycy * k + p1 * (r2 + 2 * pow(ycy, 2)) + 2 * p2 * xcx * ycy;
+		distortedPoint.x = distortedPoint.x * camera_matrix.at<double>(0, 0) + camera_matrix.at<double>(0, 2);
+		distortedPoint.y = distortedPoint.y * camera_matrix.at<double>(1, 1) + camera_matrix.at<double>(1, 2);
+
+		// Exit
+		return distortedPoint;
+	}
+
+
+	void distControlPoints( vector<Point2f>& projectCenters, Mat& K, Mat distCoeffs )
+	{
+		double fx = K.at<double>(0, 0);
+		double cx = K.at<double>(0, 2);
+		double fy = K.at<double>(1, 1);
+		double cy = K.at<double>(1, 2);
+
+		double k1 = distCoeffs.at<double>(0, 0);
+		double k2 = distCoeffs.at<double>(1, 0);
+		double p1 = distCoeffs.at<double>(2, 0);
+		double p2 = distCoeffs.at<double>(3, 0);
+		double k3 = distCoeffs.at<double>(4, 0);
+
+		vector<Point2f> distortCenters;
+
+		for ( int i = 0 ; i < projectCenters.size(); i++ )
+		{
+
+			Point2d pDistort =  distortPoint(projectCenters[i], K, distCoeffs);
+			distortCenters.push_back(Point2f(pDistort.x, pDistort.y));
+		}
+		projectCenters = distortCenters;
 
 	}
 
-	void calculatePerspective(const string& pathParameters, const string& pathFrames, Size mPatternSize , int type_choose)
+	void getImagesUndistorted(const string& pathFrames, vector<Mat>& frames, Mat& cameraMatrix, Mat& distCoeffs, unsigned int nImages)
 	{
 
-		int nFrame = 34;
-
-		int key;
-		Mat cameraMatrix;
-		Mat distCoeffs;
-		vector<Mat> rvecs;
-		vector<Mat> tvecs;
-		readParameters(pathParameters, cameraMatrix, distCoeffs, rvecs, tvecs);
-
-
-
-		vector<Mat> frames, frameUndist;
-
-		//FOR REMAP
-
-		Mat map1, map2;
-
-		//leer y undistort para la imagen 0
-		Mat image = imread(pathFrames + "frame_0.jpg");
-		if (!image.data )
-
+		for (int i = 0; i < nImages; i++)
 		{
-
-			cout << "Image no read" << endl;
-			return;
-
-		}
-
-		initUndistortRectifyMap( cameraMatrix, distCoeffs, Mat(), Mat(), image.size(), CV_16SC2, map1, map2);
-		remap(image, image, map1, map2, INTER_LINEAR);
-		frames.push_back(image);
-
-
-
-		//para el resto de imagenes
-		for (int i = 1; i < rvecs.size(); i++)
-
-		{
-
-			image = imread(pathFrames + "frame_" + to_string(i) + ".jpg");
-
+			Mat image = imread(pathFrames + "frame_" + to_string(i) + ".jpg");
+			Mat im2 = image.clone();
 			if (!image.data )
 			{
 
 				cout << "Image no read" << endl;
-
 				return;
 			}
 
-			remap(image, image, map1, map2, INTER_LINEAR);
-			frames.push_back(image);
+			undistort(image, im2, cameraMatrix, distCoeffs);
+
+			//remap(image, image, map1, map2, INTER_LINEAR);
+			frames.push_back(im2);
 		}
+	}
 
-		image = frames[nFrame];
-		Mat lambda;//( 2, 4, CV_32FC1 );
-		Mat input, output;
+	bool getRefineFrameControlPoints(int nFrame, vector<Mat> frames ,
+	                                 const string& pathFrames, Size mPatternSize , int type_choose, Mat& cameraMatrix,
+	                                 Mat& distCoeffs , vector<Point2f>& controlPoints)
+	{
+		Mat input = frames[nFrame];
+		Mat original_image = imread(pathFrames + "frame_" + to_string(nFrame) + ".jpg");
+		Mat alt = original_image.clone();
+		Mat output, lambda;
+		vector<Point2f> inputQuad(4);
+		vector<Point2f> outputQuad(4);
 
-		input = image;
+		//imshow("image", original_image);
+		//waitKey();
 
-		lambda = Mat::zeros( input.rows, input.cols, input.type() );
+		Size outSize;
+		float offset;
 
-		inputQuad.resize(4);
-		outputQuad.resize(4);
+		bool found =  calculatePoints(input, mPatternSize, type_choose, outSize, inputQuad, outputQuad, offset);
 
-		Size outSize ;
-
-		calculatePoints(input, mPatternSize, type_choose, outSize);
+		if (!found) return false;
 
 		lambda = getPerspectiveTransform( inputQuad, outputQuad );
 
 		warpPerspective(input, output, lambda, outSize );
 
-		bool found = false;
+		found = false;
 		vector<Point2f> pointBuf, pointBufCorrec;
 
-		if (type_choose == CONCENTRIC_CIRCLES)
+		if (type_choose == CHESSBOARD)
+		{
+			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
+			found = findChessboardCorners( input, mPatternSize, pointBuf, chessBoardFlags);
+		}
+		else if ( type_choose == CONCENTRIC_CIRCLES )
 		{
 			ProcManager manager;
-			found = manager.findConcentrics(output, pointBuf, output);
+			found = manager.findConcentrics(input, pointBuf, alt);
 		}
 
-		if (found)
+		if (!found) return false;
+
+		/*
+		for ( int i = 0; i < pointBuf.size(); i++ )
 		{
-			for (int i = 0; i < pointBuf.size(); i++)
-			{
-				Mat p = (Mat_<double>(3, 1) << pointBuf[i].x , pointBuf[i].y, 0.0f);
-				cout << "Control point fp: " << p << endl;
-				p = lambda.inv() * p;
-				cout << "Control point n: " << p << endl;
-				Point2f pCorrec;
-				pCorrec.x = p.at<double>(0, 0);
-				pCorrec.y = p.at<double>(1, 0);
-				pointBufCorrec.push_back( pCorrec );
-			}
-			for ( int i = 0; i < pointBufCorrec.size(); i++ )
-			{
-				circle(input, pointBufCorrec[i], 1, Scalar(255, 0, 0), 2, 8);
-			}
+			circle(input, pointBuf[i], 1, Scalar(255, 0, 255), 2, 8);
+		}
+		*/
 
+		if (type_choose == CHESSBOARD)
+		{
+			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
+			found = findChessboardCorners( output, mPatternSize, pointBuf, chessBoardFlags);
+			drawChessboardCorners( output, mPatternSize, Mat(pointBuf), found );
+		}
+		else if (type_choose == CONCENTRIC_CIRCLES)
+		{
+			ProcManager manager;
+			found = manager.findConcentrics(output, pointBuf, alt);
 		}
 
+		if (!found) return false;
+
+		//regresar los puntos a la corregida
+		pointBufCorrec.resize( pointBuf.size() );
+		perspectiveTransform( pointBuf, pointBufCorrec, lambda.inv() );
 
 
-		cout << "FOUND " << found << endl;
+		/*
+		for ( int i = 0; i < pointBufCorrec.size(); i++ )
+		{
+			circle(input, pointBufCorrec[i], 1, Scalar(0, 255, 255), 1, 8);
+		}*/
 
-		imshow("Input", input);
-		imshow("Output", output);
+		//fin regresar los puntos
+		
+		for ( int i = 0; i < pointBufCorrec.size(); i++ )
+		{
+			circle(original_image, pointBufCorrec[i], 1, Scalar(0, 0, 255), 2, 8);
+		}
+		
+
+		distControlPoints(pointBufCorrec, cameraMatrix, distCoeffs);
+
+		
+		for ( int i = 0; i < pointBufCorrec.size(); i++ )
+		{
+			circle(original_image, pointBufCorrec[i], 1, Scalar(255, 0, 0), 2, 8);
+		}
+		
+
+		//cout << "FOUND " << found << endl;
+
+		controlPoints = pointBufCorrec;
+		
+		
+		imshow("original_image", original_image);
+		//imshow("undistorted_image", input);
+		//imshow("fronto_parallel", output);
+		
+
+		return true;
+	}
+
+	bool runIterativeCalibration( Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
+	                     vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs,
+	                     vector<float>& reprojErrs,  double& totalAvgErr)
+	{
+
+		cameraMatrix = Mat::eye(3, 3, CV_64F);
+		distCoeffs = Mat::zeros(8, 1, CV_64F);
+		vector< vector<Point3f> > objectPoints(1);
+		calcBoardCornerPositions(mPatternSize , mSquareSize, objectPoints[0]);
+		objectPoints.resize(imagePoints.size(), objectPoints[0]);
+		double rms;
+		rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix, distCoeffs, rvecs, tvecs);
+
+		cout << "Camera matrix: " << cameraMatrix << endl;
+		cout << "Distortion _coefficients: " << distCoeffs << endl;
+		cout << "Re-projection error reported by calibrateCamera: " << rms << endl;
+
+		bool ok = checkRange(cameraMatrix) && checkRange(distCoeffs);
+
+		totalAvgErr = computeReprojectionErrors(objectPoints, imagePoints, rvecs, tvecs, cameraMatrix, distCoeffs, reprojErrs);
+
+		return ok;
+	}
+
+	bool runIterativeCalibrationAndSave(Size imageSize, Mat& cameraMatrix, Mat& distCoeffs,
+	                           vector<vector<Point2f> > imagePoints)
+	{
+		vector<Mat> rvecs, tvecs;
+		vector<float> reprojErrs;
+		double totalAvgErr = 0;
+
+
+		bool ok = runIterativeCalibration(imageSize, cameraMatrix, distCoeffs, imagePoints, rvecs, tvecs, reprojErrs, totalAvgErr);
+
+		cout << (ok ? "Calibration succeeded" : "Calibration failed") << ". avg re projection error = " << totalAvgErr << endl;
+		return ok;
+	}
+
+	void refineControlPoints(const string& pathParameters, const string& pathFrames, Size mPatternSize , int type_choose, float squareSize)
+	{
+
+		//int nFrame = 34;
+		int key;
+		Mat cameraMatrix;
+		Mat distCoeffs;
+		vector<Mat> rvecs;
+		vector<Mat> tvecs;
+		vector<Mat> frames, frameUndist, frames_iterative;
+
+
+		//leer los parametros iniciales
+		readParameters(pathParameters, cameraMatrix, distCoeffs, rvecs, tvecs);
+
+
+		getImagesUndistorted(pathFrames, frames, cameraMatrix, distCoeffs, rvecs.size());
+
+
+		//seteamos los valores generales para la calibracion
+	 	this->mTypeCalib = type_choose;
+		this->mPatternSize = mPatternSize;
+		this->mSquareSize = squareSize;
+
+		frames_iterative = frames;
+		for ( int iter = 0; iter < 10; iter++ ) //iterations
+		{
+			vector<unsigned int> indexs;
+			vector< vector<Point2f> >controlPointsRefineAll;
+			for ( int i = 0 ; i < frames.size(); i++ ) //frames
+			{
+				vector<Point2f> controlPointsRefine;
+				bool found = getRefineFrameControlPoints(i, frames_iterative, pathFrames, mPatternSize, type_choose, cameraMatrix, distCoeffs, controlPointsRefine);
+
+				if(found)
+				{
+					indexs.push_back(i);
+					controlPointsRefineAll.push_back(controlPointsRefine);
+				}
+			}
+
+			
+			cout<<indexs.size()<<endl;
+			runIterativeCalibrationAndSave(frames[0].size(), cameraMatrix, distCoeffs, controlPointsRefineAll);
+			vector<Mat> framesTemp;
+			for(int f = 0; f<indexs.size(); f++)
+			{
+				framesTemp.push_back(frames[indexs[f]]);
+			}
+			frames = framesTemp;
+		}
+
 
 
 

@@ -330,38 +330,39 @@ public:
 		}*/
 
 		//fin regresar los puntos
-		
+
 		for ( int i = 0; i < pointBufCorrec.size(); i++ )
 		{
 			circle(original_image, pointBufCorrec[i], 1, Scalar(0, 0, 255), 2, 8);
 		}
-		
+
 
 		distControlPoints(pointBufCorrec, cameraMatrix, distCoeffs);
 
-		
+
 		for ( int i = 0; i < pointBufCorrec.size(); i++ )
 		{
 			circle(original_image, pointBufCorrec[i], 1, Scalar(255, 0, 0), 2, 8);
 		}
-		
+
 
 		//cout << "FOUND " << found << endl;
 
 		controlPoints = pointBufCorrec;
-		
-		
-		imshow("original_image", original_image);
+
+
+		//imshow("original_image", original_image);
+		//waitKey();
 		//imshow("undistorted_image", input);
 		//imshow("fronto_parallel", output);
-		
+
 
 		return true;
 	}
 
 	bool runIterativeCalibration( Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
-	                     vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs,
-	                     vector<float>& reprojErrs,  double& totalAvgErr)
+	                              vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs,
+	                              vector<float>& reprojErrs,  double& totalAvgErr)
 	{
 
 		cameraMatrix = Mat::eye(3, 3, CV_64F);
@@ -384,7 +385,7 @@ public:
 	}
 
 	bool runIterativeCalibrationAndSave(Size imageSize, Mat& cameraMatrix, Mat& distCoeffs,
-	                           vector<vector<Point2f> > imagePoints)
+	                                    vector<vector<Point2f> > imagePoints)
 	{
 		vector<Mat> rvecs, tvecs;
 		vector<float> reprojErrs;
@@ -416,44 +417,62 @@ public:
 		getImagesUndistorted(pathFrames, frames, cameraMatrix, distCoeffs, rvecs.size());
 
 
-		//seteamos los valores generales para la calibracion
-	 	this->mTypeCalib = type_choose;
+		//seteamos los valores generales para la calibracions
+		this->mTypeCalib = type_choose;
 		this->mPatternSize = mPatternSize;
 		this->mSquareSize = squareSize;
 
 		frames_iterative = frames;
-		for ( int iter = 0; iter < 10; iter++ ) //iterations
+		vector<unsigned int> indexs;
+
+		for (int i = 0; i < rvecs.size(); i++)
 		{
-			vector<unsigned int> indexs;
+			indexs.push_back(i);
+		}
+
+
+		for ( int iter = 0; iter < 1000; iter++ ) //iterations
+		{
+
+			vector<unsigned int> indexs_temp;
 			vector< vector<Point2f> >controlPointsRefineAll;
 			for ( int i = 0 ; i < frames.size(); i++ ) //frames
 			{
 				vector<Point2f> controlPointsRefine;
-				bool found = getRefineFrameControlPoints(i, frames_iterative, pathFrames, mPatternSize, type_choose, cameraMatrix, distCoeffs, controlPointsRefine);
+				bool found = getRefineFrameControlPoints(indexs[i], frames_iterative, pathFrames, mPatternSize, type_choose, cameraMatrix, distCoeffs, controlPointsRefine);
 
-				if(found)
+				if (found)
 				{
-					indexs.push_back(i);
+					indexs_temp.push_back(indexs[i]);
 					controlPointsRefineAll.push_back(controlPointsRefine);
 				}
+
 			}
 
-			
-			cout<<indexs.size()<<endl;
-			runIterativeCalibrationAndSave(frames[0].size(), cameraMatrix, distCoeffs, controlPointsRefineAll);
-			vector<Mat> framesTemp;
-			for(int f = 0; f<indexs.size(); f++)
+
+			Mat imgclone = imread(pathFrames + "frame_" + to_string(indexs[0]) + ".jpg");
+			for ( int l = 0; l < controlPointsRefineAll[0].size(); l++ )
 			{
-				framesTemp.push_back(frames[indexs[f]]);
+				circle(imgclone, controlPointsRefineAll[0][l], 1, Scalar(0, 255, 255), 1, 8);
+			}
+
+			imshow("frame: ", imgclone);
+			waitKey();
+
+			indexs = indexs_temp;
+
+			cout << indexs.size() << endl;
+
+			runIterativeCalibrationAndSave(frames[0].size(), cameraMatrix, distCoeffs, controlPointsRefineAll);
+
+			vector<Mat> framesTemp;
+			for (int f = 0; f < indexs.size(); f++)
+			{
+				framesTemp.push_back( frames[indexs[f] ]);
+				//cout<<"agregando: "<<indexs[f]<<endl;
 			}
 			frames = framesTemp;
 		}
-
-
-
-
-		waitKey(0);
-
 	}
 
 	float AVGCheckEndColinearity(const vector< cv::Point2f >& points)

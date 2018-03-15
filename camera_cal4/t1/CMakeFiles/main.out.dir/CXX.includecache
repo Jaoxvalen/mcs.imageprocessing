@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
 iostream
 -
 sstream
@@ -34,9 +34,9 @@ opencv2/highgui.hpp
 thread
 -
 ProcManager.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
 iostream
 -
 string
@@ -46,7 +46,7 @@ opencv2/opencv.hpp
 opencv2/highgui.hpp
 -
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 chrono
 -
 iostream
@@ -58,9 +58,9 @@ opencv2/opencv.hpp
 opencv2/highgui.hpp
 -
 Ellipse.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
 iostream
 -
 string
@@ -70,13 +70,13 @@ opencv2/opencv.hpp
 opencv2/highgui.hpp
 -
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/main.cpp
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/main.cpp
 Utils.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
 ProcManager.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 CalibHandler.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
 iostream
 -
 string

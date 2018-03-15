@@ -272,6 +272,8 @@ public:
 		vector<Point2f> inputQuad(4);
 		vector<Point2f> outputQuad(4);
 
+		ProcManager pc;
+
 		//imshow("image", original_image);
 		//waitKey();
 
@@ -302,12 +304,7 @@ public:
 
 		if (!found) return false;
 
-		/*
-		for ( int i = 0; i < pointBuf.size(); i++ )
-		{
-			circle(input, pointBuf[i], 1, Scalar(255, 0, 255), 2, 8);
-		}
-		*/
+
 
 		if (type_choose == CHESSBOARD)
 		{
@@ -328,30 +325,17 @@ public:
 		perspectiveTransform( pointBuf, pointBufCorrec, lambda.inv() );
 
 
-		/*
-		for ( int i = 0; i < pointBufCorrec.size(); i++ )
-		{
-			circle(input, pointBufCorrec[i], 1, Scalar(0, 255, 255), 1, 8);
-		}*/
+
 
 		//fin regresar los puntos
 
-		for ( int i = 0; i < pointBufCorrec.size(); i++ )
-		{
-			circle(original_image, pointBufCorrec[i], 1, Scalar(0, 0, 255), 2, 8);
-		}
 
 
 		controlPointsRecs = pointBufCorrec;
 
 		distControlPoints(pointBufCorrec, cameraMatrix, distCoeffs);
 
-
-		for ( int i = 0; i < pointBufCorrec.size(); i++ )
-		{
-			circle(original_image, pointBufCorrec[i], 1, Scalar(255, 0, 0), 2, 8);
-		}
-
+		pc.drawControlPointsCross(original_image, pointBufCorrec);
 
 		//cout << "FOUND " << found << endl;
 
@@ -549,7 +533,7 @@ public:
 		//
 
 		historicTh = resultsFrames;
-		thread thread_showHistoric(showHistoric);
+		//thread thread_showHistoric(showHistoric);
 
 		for ( int iter = 0; iter < 1000; iter++ ) //iterations
 		{
@@ -589,7 +573,7 @@ public:
 			imwrite( pathSave + "iteration_" + to_string( (iter + 1) ) + ".jpg", historicSampler );
 			resultsFrames.push_back(historicSampler);
 			historicTh = resultsFrames;
-			
+
 
 			//imshow("Sample_Control", sample);
 			//imshow("Sample_Control_Correct ", frames[indexs[indexSampleFrame]]);
@@ -598,6 +582,15 @@ public:
 			indexs = indexs_temp;
 
 			ok = runIterativeCalibrationAndSave(frames[0].size(), cameraMatrix, distCoeffs, controlPointsRefineAll, rvecs, tvecs, totalAvgErr);
+
+			//TODO: obtener los nuevos frames distorsionados
+			for (int l = 0; l < indexs.size(); l++)
+			{
+				Mat undistorted;
+				undistort(originalFrames[ indexs[l] ] , undistorted, cameraMatrix, distCoeffs);
+				frames_iterative[ indexs[l] ] = undistorted;
+			}
+
 
 			UndisSampler = frames[ indexSampleFrame ];
 			Mat copyUndis = UndisSampler.clone();
@@ -613,14 +606,13 @@ public:
 				framesTemp.push_back( frames[indexs[f] ]);
 			}
 			frames = framesTemp;
+
+			if (ok)
+			{
+				saveparams(pathSave+"calib.yml", cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
+			}
 		}
 
-
-
-		if (ok)
-		{
-			saveparams(pathSave, cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
-		}
 
 	}
 

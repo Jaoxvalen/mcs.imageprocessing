@@ -31,6 +31,8 @@ opencv2/videoio.hpp
 -
 opencv2/highgui.hpp
 -
+thread
+-
 ProcManager.h
 /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 

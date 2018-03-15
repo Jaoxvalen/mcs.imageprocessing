@@ -749,6 +749,8 @@ public:
 
 		//sort( lsSort.begin(), lsSort.end(), thanCompareIndex );
 		//cout<<"--------------------------------"<<endl;
+
+		/*
 		for (int i = 0; i < lsSort.size(); ++i)
 		{
 
@@ -761,9 +763,42 @@ public:
 			putText(image, to_string( lsSort[i].index ) ,
 			        lsSort[i].element.center , FONT_HERSHEY_PLAIN, 1,
 			        Scalar(255, 0, 255), 2);
-		}
+		}*/
 
 		return true;
+	}
+
+	void drawControlPointsNumbers(Mat& image, vector<Point2f> points )
+	{
+		for (int i = 0; i < points.size(); ++i)
+		{
+			if (i != points.size() - 1)
+				line( image, points[i], points[i + 1], Scalar(0, 0, 255), 1, 8 );
+
+				
+			putText(image, to_string( i ) ,
+			        points[i] , FONT_HERSHEY_PLAIN, 1,
+			        Scalar(255, 0, 255), 2);
+		}
+	}
+
+	void drawControlPoints(Mat& image, vector<Point2f> points, bool tracking = true )
+	{
+		drawChessboardCorners( image, Size(5,4), Mat(points), tracking );
+		//drawControlPointsCross(image, points);
+	}
+
+	void drawControlPointsCross(Mat& image, vector<Point2f>& points, Scalar color = Scalar(0,0,255), float size = 1 )
+	{
+		for (int i = 0; i < points.size(); ++i)
+		{
+			Point2f p1(points[i].x, points[i].y - size);
+			Point2f p2(points[i].x, points[i].y + size);
+			Point2f p3(points[i].x-size, points[i].y);
+			Point2f p4(points[i].x+size, points[i].y);
+			line( image, p1, p2, color, 1, 8 );
+			line( image, p3, p4, color, 1, 8 );
+		}
 	}
 
 	void updateROI(Mat& image)
@@ -835,13 +870,13 @@ public:
 
 	}
 
-	bool findConcentrics( Mat& image, vector<Point2f> &pointBuf, Mat& view )
+	bool findConcentrics( Mat& image, vector<Point2f> &pointBuf )
 	{
-		view = image.clone();
-		return preProcessing( image, pointBuf, view );
+		//view = image.clone();
+		return preProcessing( image, pointBuf );
 	}
 
-	bool preProcessing(Mat& image, vector<Point2f> &pointBuf, Mat& view)
+	bool preProcessing(Mat& image, vector<Point2f> &pointBuf)
 	{
 
 		
@@ -890,7 +925,7 @@ public:
 
 		//Todo: erosion y dilatacion
 
-		imshow("adaptiveThreshold", _procImage);
+		//imshow("adaptiveThreshold", _procImage);
 		//Canny( _procImage, _procImage, 100, 200, 3 );
 		findContours( _procImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
@@ -1151,8 +1186,8 @@ public:
 			}
 
 			//no borrar
-			ellipse( view, lsEllipses[i].element , Scalar(0, 255, 0) , 1, 8 );
-			ellipse( view, original[child] , Scalar(255, 255, 0) , 1, 8 );
+			//ellipse( view, lsEllipses[i].element , Scalar(0, 255, 0) , 1, 8 );
+			//ellipse( view, original[child] , Scalar(255, 255, 0) , 1, 8 );
 		}
 
 
@@ -1170,13 +1205,13 @@ public:
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 
-		bool ret =  tracking(view);
+		bool ret =  tracking(image);
 
 
 
 		if(lsDetection.size() == 20 && !isRecovery)
 		{
-			updateROI(view);
+			updateROI(image);
 		}
 		else
 		{

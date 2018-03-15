@@ -11,6 +11,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
+#include <thread>
 
 #include "ProcManager.h"
 
@@ -33,6 +34,9 @@ enum TYPECALIB
 	ASYMMETRIC_CIRCLES_GRID,
 	CONCENTRIC_CIRCLES
 };
+
+vector<Mat> historicTh;
+Mat UndisSampler, Sampler;
 
 
 namespace vision
@@ -67,7 +71,7 @@ public:
 		mInputVideodir = pInputVideodir;
 	}
 
-	void readParameters(const string& path, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs,  vector<Mat>& tvecs)
+	void readParameters(const string& path, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs,  vector<Mat>& tvecs, double& rms)
 	{
 		FileStorage fs;
 		fs.open(path.c_str(), FileStorage::READ);
@@ -75,6 +79,7 @@ public:
 		fs["Distortion_Coefficients"] >> distCoeffs;
 		fs["Rotation_Vector"] >> rvecs;
 		fs["Translation_vector"] >> tvecs;
+		fs["Calibrate_Accuracy"] >> rms;
 		fs.release();
 	}
 
@@ -102,7 +107,7 @@ public:
 			//rings
 			ProcManager concentricHand2;
 			Mat auxView = input;
-			found = concentricHand2.findConcentrics(input, pointBuf, auxView);
+			found = concentricHand2.findConcentrics(input, pointBuf);
 			//cout<<"pointBuf[0]"<<pointBuf[0]<<endl;
 			size = input.cols / 8.0f;
 			offset = -size / 3.8f;
@@ -235,7 +240,7 @@ public:
 
 	}
 
-	void getImagesUndistorted(const string& pathFrames, vector<Mat>& frames, Mat& cameraMatrix, Mat& distCoeffs, unsigned int nImages)
+	void getImagesUndistorted(const string& pathFrames, vector<Mat>& frames, vector<Mat>& originalFrames, Mat& cameraMatrix, Mat& distCoeffs, unsigned int nImages)
 	{
 
 		for (int i = 0; i < nImages; i++)
@@ -248,7 +253,7 @@ public:
 				cout << "Image no read" << endl;
 				return;
 			}
-
+			originalFrames.push_back(image);
 			undistort(image, im2, cameraMatrix, distCoeffs);
 
 			//remap(image, image, map1, map2, INTER_LINEAR);
@@ -258,7 +263,7 @@ public:
 
 	bool getRefineFrameControlPoints(int nFrame, vector<Mat> frames ,
 	                                 const string& pathFrames, Size mPatternSize , int type_choose, Mat& cameraMatrix,
-	                                 Mat& distCoeffs , vector<Point2f>& controlPoints)
+	                                 Mat& distCoeffs , vector<Point2f>& controlPoints, vector<Point2f>& controlPointsRecs)
 	{
 		Mat input = frames[nFrame];
 		Mat original_image = imread(pathFrames + "frame_" + to_string(nFrame) + ".jpg");
@@ -292,7 +297,7 @@ public:
 		else if ( type_choose == CONCENTRIC_CIRCLES )
 		{
 			ProcManager manager;
-			found = manager.findConcentrics(input, pointBuf, alt);
+			found = manager.findConcentrics(input, pointBuf);
 		}
 
 		if (!found) return false;
@@ -313,7 +318,7 @@ public:
 		else if (type_choose == CONCENTRIC_CIRCLES)
 		{
 			ProcManager manager;
-			found = manager.findConcentrics(output, pointBuf, alt);
+			found = manager.findConcentrics(output, pointBuf);
 		}
 
 		if (!found) return false;
@@ -336,6 +341,8 @@ public:
 			circle(original_image, pointBufCorrec[i], 1, Scalar(0, 0, 255), 2, 8);
 		}
 
+
+		controlPointsRecs = pointBufCorrec;
 
 		distControlPoints(pointBufCorrec, cameraMatrix, distCoeffs);
 
@@ -373,8 +380,8 @@ public:
 		double rms;
 		rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix, distCoeffs, rvecs, tvecs);
 
-		cout << "Camera matrix: " << cameraMatrix << endl;
-		cout << "Distortion _coefficients: " << distCoeffs << endl;
+		//cout << "Camera matrix: " << cameraMatrix << endl;
+		//cout << "Distortion _coefficients: " << distCoeffs << endl;
 		cout << "Re-projection error reported by calibrateCamera: " << rms << endl;
 
 		bool ok = checkRange(cameraMatrix) && checkRange(distCoeffs);
@@ -385,20 +392,100 @@ public:
 	}
 
 	bool runIterativeCalibrationAndSave(Size imageSize, Mat& cameraMatrix, Mat& distCoeffs,
-	                                    vector<vector<Point2f> > imagePoints)
+	                                    vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs, double& totalAvgErr)
 	{
-		vector<Mat> rvecs, tvecs;
-		vector<float> reprojErrs;
-		double totalAvgErr = 0;
 
+		totalAvgErr = 0;
+		vector<float> reprojErrs;
+
+		tvecs.clear();
+		rvecs.clear();
+		cameraMatrix = Mat();
+		distCoeffs = Mat();
 
 		bool ok = runIterativeCalibration(imageSize, cameraMatrix, distCoeffs, imagePoints, rvecs, tvecs, reprojErrs, totalAvgErr);
 
 		cout << (ok ? "Calibration succeeded" : "Calibration failed") << ". avg re projection error = " << totalAvgErr << endl;
+
 		return ok;
 	}
 
-	void refineControlPoints(const string& pathParameters, const string& pathFrames, Size mPatternSize , int type_choose, float squareSize)
+
+	bool findControlPoints(Mat& frame, vector<Point2f>& points , int type_choose)
+	{
+		bool found  = false;
+		if ( type_choose == CONCENTRIC_CIRCLES )
+		{
+			ProcManager ch;
+			found = ch.findConcentrics(frame, points);
+		}
+		return found;
+
+	}
+
+	bool findAndDrawControlPoints(Mat& input, Mat& output, vector<Point2f>& points , int type_choose, Scalar color = Scalar(0, 0, 255))
+	{
+		bool found  = false;
+		output = input.clone();
+		if ( type_choose == CONCENTRIC_CIRCLES )
+		{
+			ProcManager ch;
+			found = ch.findConcentrics(output, points);
+		}
+
+		if (found)
+		{
+			ProcManager ch;
+			ch.drawControlPointsCross(output, points, color);
+		}
+
+		return found;
+
+	}
+
+	float distance(const Point2f& A, const Point2f& B)
+	{
+		return sqrt( pow(A.x - B.x, 2) + pow (A.y - B.y, 2) );
+	}
+
+	float errorDistancesControlPoints( vector<Point2f>& pointsA, vector<Point2f>& pointsB )
+	{
+
+		//calcula la distancia entre los puntos y los acumula
+
+		if ( pointsA.size() != pointsB.size() )
+		{
+			return -1.0f;
+		}
+		float accum = 0.0f;
+		for ( int i = 0; i < pointsA.size(); i++ )
+		{
+			float dis = distance( pointsA[i], pointsB[i] );
+			accum += dis;
+		}
+
+		return accum;
+	}
+
+	static void showHistoric()
+	{
+		while (true)
+		{
+			for (int i = 0 ; i < historicTh.size(); i++)
+			{
+				imshow("historic", historicTh[i]);
+				imshow("Sampler", Sampler);
+				imshow("UndisSampler", UndisSampler);
+				waitKey(200);
+			}
+
+			imshow("Sampler", Sampler);
+			imshow("UndisSampler", UndisSampler);
+		}
+	}
+
+
+	void refineControlPoints(const string& pathParameters, const string& pathFrames, Size mPatternSize , int type_choose, float squareSize, const string& pathSave)
 	{
 
 		//int nFrame = 34;
@@ -407,14 +494,19 @@ public:
 		Mat distCoeffs;
 		vector<Mat> rvecs;
 		vector<Mat> tvecs;
-		vector<Mat> frames, frameUndist, frames_iterative;
+		vector<Mat> frames, frames_iterative, originalFrames, resultsFrames;
+		bool ok = false;
+		double rms;
+		unsigned int indexSampleFrame = 0;
 
+
+		vector< Scalar > colorDiff = { Scalar(0, 0, 255), Scalar(0, 255, 0), Scalar(255, 0, 0), Scalar(0, 255, 255), Scalar(255, 255, 0) };
 
 		//leer los parametros iniciales
-		readParameters(pathParameters, cameraMatrix, distCoeffs, rvecs, tvecs);
+		readParameters(pathParameters, cameraMatrix, distCoeffs, rvecs, tvecs, rms);
 
 
-		getImagesUndistorted(pathFrames, frames, cameraMatrix, distCoeffs, rvecs.size());
+		getImagesUndistorted(pathFrames, frames, originalFrames, cameraMatrix, distCoeffs, rvecs.size());
 
 
 		//seteamos los valores generales para la calibracions
@@ -430,49 +522,106 @@ public:
 			indexs.push_back(i);
 		}
 
+		vector<float> reprojErrs;
+		double totalAvgErr;
+
+
+		cout << "initial RMS: " << rms << endl;
+
+		vector<Point2f> controlPointsSampler;
+		//choice the sample frame
+		Mat sample, historicSampler;
+		for (int i = 0 ; i < frames.size(); i++)
+		{
+			if ( findControlPoints(frames[i], controlPointsSampler, type_choose ) )
+			{
+				findAndDrawControlPoints(originalFrames[i], sample, controlPointsSampler, type_choose, colorDiff[0] );
+				//imshow("Sample_Control", sample);
+				historicSampler = sample.clone();
+				indexSampleFrame = i;
+				break;
+			}
+		}
+		imwrite( pathSave + "iteration_0.jpg", historicSampler );
+		resultsFrames.push_back(historicSampler);
+		Sampler = sample;
+		UndisSampler = frames[indexSampleFrame];
+		//
+
+		historicTh = resultsFrames;
+		thread thread_showHistoric(showHistoric);
 
 		for ( int iter = 0; iter < 1000; iter++ ) //iterations
 		{
 
+			cout << "iteration: " << iter << endl;
 			vector<unsigned int> indexs_temp;
 			vector< vector<Point2f> >controlPointsRefineAll;
+
+			float colinearity = 0.0f;
 			for ( int i = 0 ; i < frames.size(); i++ ) //frames
 			{
-				vector<Point2f> controlPointsRefine;
-				bool found = getRefineFrameControlPoints(indexs[i], frames_iterative, pathFrames, mPatternSize, type_choose, cameraMatrix, distCoeffs, controlPointsRefine);
+				vector<Point2f> controlPointsRefine, controlsPointsRefineCorrect;
+				bool found = getRefineFrameControlPoints(indexs[i], frames_iterative, pathFrames, mPatternSize, type_choose, cameraMatrix, distCoeffs, controlPointsRefine, controlsPointsRefineCorrect);
 
 				if (found)
 				{
 					indexs_temp.push_back(indexs[i]);
 					controlPointsRefineAll.push_back(controlPointsRefine);
+					colinearity += AVGCheckEndColinearity(controlsPointsRefineCorrect);
+				}
+
+				if ( indexs[i] == indexSampleFrame )
+				{
+					float improvement = errorDistancesControlPoints( controlPointsSampler, controlPointsRefine );
+					cout << "sample frame improvement :" << improvement << endl;
 				}
 
 			}
 
 
-			Mat imgclone = imread(pathFrames + "frame_" + to_string(indexs[0]) + ".jpg");
-			for ( int l = 0; l < controlPointsRefineAll[0].size(); l++ )
-			{
-				circle(imgclone, controlPointsRefineAll[0][l], 1, Scalar(0, 255, 255), 1, 8);
-			}
+			Mat imgOriginal = originalFrames[indexs[0]];
 
-			imshow("frame: ", imgclone);
-			waitKey();
+			ProcManager pm;
+			pm.drawControlPointsCross(sample, controlPointsRefineAll[ indexs[indexSampleFrame] ], colorDiff[(iter + 1) % 5]);
+			historicSampler = originalFrames[indexs[indexSampleFrame]].clone();
+			pm.drawControlPointsCross(historicSampler, controlPointsRefineAll[ indexs[indexSampleFrame] ], Scalar(0, 0, 255));
+			imwrite( pathSave + "iteration_" + to_string( (iter + 1) ) + ".jpg", historicSampler );
+			resultsFrames.push_back(historicSampler);
+			historicTh = resultsFrames;
+			
+
+			//imshow("Sample_Control", sample);
+			//imshow("Sample_Control_Correct ", frames[indexs[indexSampleFrame]]);
+			//waitKey(100);
 
 			indexs = indexs_temp;
 
-			cout << indexs.size() << endl;
+			ok = runIterativeCalibrationAndSave(frames[0].size(), cameraMatrix, distCoeffs, controlPointsRefineAll, rvecs, tvecs, totalAvgErr);
 
-			runIterativeCalibrationAndSave(frames[0].size(), cameraMatrix, distCoeffs, controlPointsRefineAll);
+			UndisSampler = frames[ indexSampleFrame ];
+			Mat copyUndis = UndisSampler.clone();
+			undistort(UndisSampler, copyUndis, cameraMatrix, distCoeffs);
+			UndisSampler = copyUndis;
+
+			colinearity /= indexs.size();
+			cout << "colinearity mean in iter " << iter << " : " << colinearity << endl;
 
 			vector<Mat> framesTemp;
 			for (int f = 0; f < indexs.size(); f++)
 			{
 				framesTemp.push_back( frames[indexs[f] ]);
-				//cout<<"agregando: "<<indexs[f]<<endl;
 			}
 			frames = framesTemp;
 		}
+
+
+
+		if (ok)
+		{
+			saveparams(pathSave, cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
+		}
+
 	}
 
 	float AVGCheckEndColinearity(const vector< cv::Point2f >& points)
@@ -777,7 +926,7 @@ public:
 				}
 				else if ( mTypeCalib == CONCENTRIC_CIRCLES )
 				{
-					found = concentricHand.findConcentrics(view, pointBuf, auxView);
+					found = concentricHand.findConcentrics(view, pointBuf);
 				}
 				else
 				{
@@ -797,6 +946,10 @@ public:
 					{
 						//imshow("Image View alt", auxView);
 						drawChessboardCorners( auxView, mPatternSize, Mat(pointBuf), found );
+					}
+					else
+					{
+						concentricHand.drawControlPoints( auxView, pointBuf );
 					}
 
 
@@ -916,8 +1069,8 @@ public:
 							ProcManager concentricHandA;
 							ProcManager concentricHandB;
 
-							foundA = concentricHandA.findConcentrics(view, pointBufA, view);
-							foundB = concentricHandB.findConcentrics(rview, pointBufB, rview);
+							foundA = concentricHandA.findConcentrics(view, pointBufA);
+							foundB = concentricHandB.findConcentrics(rview, pointBufB);
 						}
 						else
 						{
@@ -932,6 +1085,12 @@ public:
 								drawChessboardCorners( view, mPatternSize, Mat(pointBufA), foundA );
 								drawChessboardCorners( rview, mPatternSize, Mat(pointBufB), foundB );
 
+							}
+							else
+							{
+								ProcManager ch;
+								ch.drawControlPoints(view, pointBufA);
+								ch.drawControlPoints(rview, pointBufB);
 							}
 
 							float colinearityA = AVGCheckEndColinearity(pointBufA);

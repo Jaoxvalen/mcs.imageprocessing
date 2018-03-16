@@ -788,8 +788,10 @@ public:
 		//drawControlPointsCross(image, points);
 	}
 
-	void drawControlPointsCross(Mat& image, vector<Point2f>& points, Scalar color = Scalar(0,0,255), float size = 1 )
+	void drawControlPointsCross(Mat& image, vector<Point2f>& points, Scalar color = Scalar(0,0,255), float size = 3 )
 	{
+		//drawControlPoints(image, points, true);
+		
 		for (int i = 0; i < points.size(); ++i)
 		{
 			Point2f p1(points[i].x, points[i].y - size);

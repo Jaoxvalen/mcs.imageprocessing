@@ -13,7 +13,9 @@
 #include <opencv2/highgui.hpp>
 #include <thread>
 
+#include "Utils.h"
 #include "ProcManager.h"
+#include "IterativeCalibration.h"
 
 using namespace cv;
 using namespace std;
@@ -27,16 +29,9 @@ enum STATECALIB
 	STATE_SHOW_UNDISTORT
 };
 
-enum TYPECALIB
-{
-	CHESSBOARD,
-	CIRCLES_GRID,
-	ASYMMETRIC_CIRCLES_GRID,
-	CONCENTRIC_CIRCLES
-};
 
-vector<Mat> historicTh;
-Mat UndisSampler, Sampler;
+
+
 
 
 namespace vision
@@ -263,11 +258,11 @@ public:
 
 	bool getRefineFrameControlPoints(int nFrame, vector<Mat> frames ,
 	                                 const string& pathFrames, Size mPatternSize , int type_choose, Mat& cameraMatrix,
-	                                 Mat& distCoeffs , vector<Point2f>& controlPoints, vector<Point2f>& controlPointsRecs)
+	                                 Mat& distCoeffs , vector<Point2f>& controlPoints, vector<Point2f>& controlPointsRecs, bool isSampler = false)
 	{
+		//cout<<"frame "<<nFrame<<endl;
 		Mat input = frames[nFrame];
 		Mat original_image = imread(pathFrames + "frame_" + to_string(nFrame) + ".jpg");
-		Mat alt = original_image.clone();
 		Mat output, lambda;
 		vector<Point2f> inputQuad(4);
 		vector<Point2f> outputQuad(4);
@@ -286,7 +281,13 @@ public:
 
 		lambda = getPerspectiveTransform( inputQuad, outputQuad );
 
+
+
 		warpPerspective(input, output, lambda, outSize );
+
+
+
+
 
 		found = false;
 		vector<Point2f> pointBuf, pointBufCorrec;
@@ -295,6 +296,10 @@ public:
 		{
 			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
 			found = findChessboardCorners( input, mPatternSize, pointBuf, chessBoardFlags);
+			Mat viewGray;
+			cvtColor(input, viewGray, COLOR_BGR2GRAY);
+			cornerSubPix( viewGray, pointBuf, Size(11, 11),
+			              Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
 		}
 		else if ( type_choose == CONCENTRIC_CIRCLES )
 		{
@@ -305,12 +310,23 @@ public:
 		if (!found) return false;
 
 
+		//vector<Point2f> pointsTemp;
+		//perspectiveTransform( pointBuf, pointsTemp, lambda );
+		//pc.drawControlPointsCross( output, pointsTemp, Scalar(255,0,0));
+
+
 
 		if (type_choose == CHESSBOARD)
 		{
 			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
 			found = findChessboardCorners( output, mPatternSize, pointBuf, chessBoardFlags);
-			drawChessboardCorners( output, mPatternSize, Mat(pointBuf), found );
+
+			Mat viewGray;
+			cvtColor(output, viewGray, COLOR_BGR2GRAY);
+			cornerSubPix( viewGray, pointBuf, Size(11, 11),
+			              Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
+
+			//drawChessboardCorners( output, mPatternSize, Mat(pointBuf), found );
 		}
 		else if (type_choose == CONCENTRIC_CIRCLES)
 		{
@@ -322,28 +338,41 @@ public:
 
 		//regresar los puntos a la corregida
 		pointBufCorrec.resize( pointBuf.size() );
+
+
+
 		perspectiveTransform( pointBuf, pointBufCorrec, lambda.inv() );
-
-
 
 
 		//fin regresar los puntos
 
-
-
 		controlPointsRecs = pointBufCorrec;
+
+
+		pc.drawControlPointsCross(input, pointBufCorrec);
+
 
 		distControlPoints(pointBufCorrec, cameraMatrix, distCoeffs);
 
+
 		pc.drawControlPointsCross(original_image, pointBufCorrec);
+		pc.drawControlPointsCross(output, pointBuf);
+
 
 		//cout << "FOUND " << found << endl;
 
 		controlPoints = pointBufCorrec;
 
 
-		//imshow("original_image", original_image);
-		//waitKey();
+
+		if (isSampler)
+		{
+			imshow("fronto_parallel", output);
+			imshow("undistorted_image", input);
+			imshow("original_image", original_image);
+			waitKey(200);
+		}
+
 		//imshow("undistorted_image", input);
 		//imshow("fronto_parallel", output);
 
@@ -398,6 +427,17 @@ public:
 	bool findControlPoints(Mat& frame, vector<Point2f>& points , int type_choose)
 	{
 		bool found  = false;
+
+		if ( type_choose == CHESSBOARD )
+		{
+			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
+			found = findChessboardCorners( frame, mPatternSize, points, chessBoardFlags);
+			Mat viewGray;
+			cvtColor(frame, viewGray, COLOR_BGR2GRAY);
+			cornerSubPix( viewGray, points, Size(11, 11),
+			              Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
+		}
+
 		if ( type_choose == CONCENTRIC_CIRCLES )
 		{
 			ProcManager ch;
@@ -415,6 +455,15 @@ public:
 		{
 			ProcManager ch;
 			found = ch.findConcentrics(output, points);
+		}
+		if ( type_choose == CHESSBOARD )
+		{
+			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
+			found = findChessboardCorners( output, mPatternSize, points, chessBoardFlags);
+			Mat viewGray;
+			cvtColor(output, viewGray, COLOR_BGR2GRAY);
+			cornerSubPix( viewGray, points, Size(11, 11),
+			              Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
 		}
 
 		if (found)
@@ -451,6 +500,7 @@ public:
 		return accum;
 	}
 
+	/*
 	static void showHistoric()
 	{
 		while (true)
@@ -467,7 +517,7 @@ public:
 			imshow("UndisSampler", UndisSampler);
 		}
 	}
-
+	*/
 
 	void refineControlPoints(const string& pathParameters, const string& pathFrames, Size mPatternSize , int type_choose, float squareSize, const string& pathSave)
 	{
@@ -512,7 +562,9 @@ public:
 
 		cout << "initial RMS: " << rms << endl;
 
-		vector<Point2f> controlPointsSampler;
+		vector<Point2f> controlPointsSampler, controlPointsColi;
+
+
 		//choice the sample frame
 		Mat sample, historicSampler;
 		for (int i = 0 ; i < frames.size(); i++)
@@ -528,14 +580,27 @@ public:
 		}
 		imwrite( pathSave + "iteration_0.jpg", historicSampler );
 		resultsFrames.push_back(historicSampler);
-		Sampler = sample;
-		UndisSampler = frames[indexSampleFrame];
-		//
 
-		historicTh = resultsFrames;
-		//thread thread_showHistoric(showHistoric);
+		//initial colinearity
+		float colinearityIni = 0.0f;
+		int cant = 0;
+		for (int i = 0 ; i < frames.size(); i++)
+		{
+			if ( findControlPoints(frames[i], controlPointsColi, type_choose ) )
+			{
+				colinearityIni += AVGCheckEndColinearity(controlPointsColi);
+				cant++;
+			}
+		}
 
-		for ( int iter = 0; iter < 1000; iter++ ) //iterations
+		colinearityIni /= cant;
+
+		cout << "colinearity mean initial :" << colinearityIni << endl;
+		
+
+
+
+		for ( int iter = 0; iter < 10; iter++ ) //iterations
 		{
 
 			cout << "iteration: " << iter << endl;
@@ -545,8 +610,9 @@ public:
 			float colinearity = 0.0f;
 			for ( int i = 0 ; i < frames.size(); i++ ) //frames
 			{
+				bool isSampler = (indexs[i] == indexSampleFrame);
 				vector<Point2f> controlPointsRefine, controlsPointsRefineCorrect;
-				bool found = getRefineFrameControlPoints(indexs[i], frames_iterative, pathFrames, mPatternSize, type_choose, cameraMatrix, distCoeffs, controlPointsRefine, controlsPointsRefineCorrect);
+				bool found = getRefineFrameControlPoints(indexs[i], frames_iterative, pathFrames, mPatternSize, type_choose, cameraMatrix, distCoeffs, controlPointsRefine, controlsPointsRefineCorrect, isSampler);
 
 				if (found)
 				{
@@ -554,11 +620,15 @@ public:
 					controlPointsRefineAll.push_back(controlPointsRefine);
 					colinearity += AVGCheckEndColinearity(controlsPointsRefineCorrect);
 				}
-
-				if ( indexs[i] == indexSampleFrame )
+				else
 				{
-					float improvement = errorDistancesControlPoints( controlPointsSampler, controlPointsRefine );
-					cout << "sample frame improvement :" << improvement << endl;
+					cout<<"frame removed: "<<indexs[i]<<endl;
+				}
+
+				if ( isSampler )
+				{
+					float diff = errorDistancesControlPoints( controlPointsSampler, controlPointsRefine );
+					cout << "cp_refine - cp_initial: " << diff << endl;
 				}
 
 			}
@@ -572,12 +642,7 @@ public:
 			pm.drawControlPointsCross(historicSampler, controlPointsRefineAll[ indexs[indexSampleFrame] ], Scalar(0, 0, 255));
 			imwrite( pathSave + "iteration_" + to_string( (iter + 1) ) + ".jpg", historicSampler );
 			resultsFrames.push_back(historicSampler);
-			historicTh = resultsFrames;
 
-
-			//imshow("Sample_Control", sample);
-			//imshow("Sample_Control_Correct ", frames[indexs[indexSampleFrame]]);
-			//waitKey(100);
 
 			indexs = indexs_temp;
 
@@ -592,10 +657,10 @@ public:
 			}
 
 
-			UndisSampler = frames[ indexSampleFrame ];
-			Mat copyUndis = UndisSampler.clone();
-			undistort(UndisSampler, copyUndis, cameraMatrix, distCoeffs);
-			UndisSampler = copyUndis;
+			//UndisSampler = frames[ indexSampleFrame ];
+			//Mat copyUndis = UndisSampler.clone();
+			//undistort(UndisSampler, copyUndis, cameraMatrix, distCoeffs);
+			//UndisSampler = copyUndis;
 
 			colinearity /= indexs.size();
 			cout << "colinearity mean in iter " << iter << " : " << colinearity << endl;
@@ -609,9 +674,17 @@ public:
 
 			if (ok)
 			{
-				saveparams(pathSave+"calib.yml", cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
+				saveparams(pathSave + "calib.yml", cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
 			}
 		}
+
+		for ( int i = 0; i < indexs.size(); i++ )
+		{
+			imshow("original", originalFrames[ indexs[i] ]);
+			imshow("calibrated", frames_iterative[ indexs[i] ]);
+			waitKey();
+		}
+
 
 
 	}
@@ -950,7 +1023,7 @@ public:
 
 						//cout<<pointBuf.size()<<endl;
 
-						imwrite( "../res/images/calibration/frames/frame_" + to_string(nImgAdded) + ".jpg", view );
+						imwrite( "../res/images/calibration/frames_asymetrics/frame_" + to_string(nImgAdded) + ".jpg", view );
 						imagePoints.push_back(pointBuf);
 						nImgAdded++;
 						cout << "image frame added " << nImg << endl;

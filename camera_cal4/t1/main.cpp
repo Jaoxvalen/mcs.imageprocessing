@@ -2,6 +2,7 @@
 #include "ProcManager.h"
 //#include "CalibManager.h"
 #include "CalibHandler.h"
+#include "IterativeCalibration.h"
 
 #include <iostream>
 #include <string>
@@ -26,7 +27,8 @@ enum initType
 	CALIB_CIRCLES_GRID,
 	CALIB_ASYMMETRIC_CIRCLES_GRID,
 	CALIB_CONCENTRIC_CIRCLES,
-	FRONTO_PARALLEL
+	FRONTO_PARALLEL,
+	ITERATIVE_CALIB
 };
 
 int init(int type)
@@ -159,7 +161,7 @@ int init(int type)
 	else if ( type == FRONTO_PARALLEL )
 	{
 		CalibHandler manager;
-		int type_choose = CONCENTRIC_CIRCLES;
+		int type_choose = CHESSBOARD;
 		string frames;
 		Size mPatternSize;
 		string parameters;
@@ -185,6 +187,30 @@ int init(int type)
 		cout<<parameters<<endl;
 		manager.refineControlPoints(parameters, "../res/images/calibration/"+ frames, mPatternSize, type_choose, sizePattern, "../res/results/");
 	}
+	else if(ITERATIVE_CALIB)
+	{
+		int type_choose = ASYMMETRIC_CIRCLES_GRID;
+
+		if( type_choose == CHESSBOARD )
+		{
+			IterativeCalibration ic(CHESSBOARD, 20.0f);
+			ic.init_calibrate( "calib_chess_ps3.yml" ,"../res/images/calibration/frames_chess/", "../res/results/");
+		}
+		else if( type_choose == CONCENTRIC_CIRCLES )
+		{
+			IterativeCalibration ic(CONCENTRIC_CIRCLES, 42.0f);
+			ic.init_calibrate( "calib_concentrics_ps3.yml" ,"../res/images/calibration/frames_rings/", "../res/results/");
+		}
+		else if( type_choose == ASYMMETRIC_CIRCLES_GRID )
+		{
+			IterativeCalibration ic(ASYMMETRIC_CIRCLES_GRID, 20.0f);
+			ic.init_calibrate( "calib_asycircles_ps3.yml" ,"../res/images/calibration/frames_asymetrics/", "../res/results/");
+		}
+
+
+		
+		
+	}
 
 	//waitKey();
 
@@ -197,6 +223,6 @@ int main()
 	cout << "cv's build information" << endl;
 	cout << cv::getBuildInformation() << endl;*/
 
-	return init(FRONTO_PARALLEL);
+	return init(ITERATIVE_CALIB);
 
 }

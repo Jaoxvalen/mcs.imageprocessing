@@ -42,7 +42,7 @@ public:
 		}
 		else if ( type_calibration == CHESSBOARD )
 		{
-			pattern_size = Size(9 , 6);
+			pattern_size = Size(7 , 5);
 		}
 		else if ( type_calibration == ASYMMETRIC_CIRCLES_GRID )
 		{
@@ -50,6 +50,123 @@ public:
 		}
 
 
+	}
+
+	//metricas
+
+	float distance(const Point2f& A, const Point2f& B)
+	{
+		return sqrt( pow(A.x - B.x, 2) + pow (A.y - B.y, 2) );
+	}
+
+	float checkMin2Colinearity(vector<Point2f>& control_points)
+	{
+
+		vector<Point2f> control_points_refined;
+		refine_control_points_colinearity(control_points, control_points_refined);
+		float dist = 0.0f;
+
+		for(int i = 0; i<control_points_refined.size(); i++)
+		{
+			dist += distance(control_points_refined[i], control_points[i]);
+		}
+		dist /= ( (float) (pattern_size.height *  pattern_size.width) );
+
+		return dist;
+
+	}
+
+	//recibe frames no distorsionados y devuelve la colinearidad media entre los frames
+	float AVGcolinearityFrames(vector<Mat>& frames_undistorted)
+	{
+		float avg = 0.0f;
+		int count = 0;
+		for(int i=0; i<frames_undistorted.size(); i++)
+		{
+			vector<Point2f> control_points;
+			if( find_control_points(frames_undistorted[i], control_points) )
+			{
+				avg += AVGCheckEndColinearity( control_points );
+				count++;
+			}
+		}
+		avg = avg/((float) count);
+		return avg;
+	}
+
+	//recibe los puntos de control encontrado en el patron
+	float AVGCheckEndColinearity(vector< cv::Point2f >& points)
+	{
+
+		float avg = 0.0f;
+		//horizontales
+		for ( int i = 0; i < pattern_size.height; i++ )
+		{
+			vector<Point2f> pointsSel;
+			for ( int j = 0; j < pattern_size.width; j++ )
+			{
+				pointsSel.push_back(points[ pattern_size.width * i + j ] );
+			}
+			/*
+			ProcManager pm;
+			pm.drawControlPointsCross(image, pointsSel);
+			imshow("image", image);
+			waitKey();
+			*/
+			avg += checkEnd2EndColinearity(pointsSel);
+		}
+
+		//verticales
+		for ( int i = 0; i < pattern_size.width; i++ )
+		{
+			vector<Point2f> pointsSel;
+			for ( int j = 0; j < pattern_size.height; j++ )
+			{
+				pointsSel.push_back(points[ j*pattern_size.width + i ] );
+			}
+			
+			/*
+			ProcManager pm;
+			pm.drawControlPointsCross(image, pointsSel);
+			imshow("image", image);
+			waitKey();
+			*/
+			avg += checkEnd2EndColinearity(pointsSel);
+		}
+
+
+		avg = avg /( (float) (pattern_size.height +  pattern_size.width) );
+
+	}
+	float checkEnd2EndColinearity( const vector< cv::Point2f >& points )
+	{
+		// Get line parameters - compute equation ax + by + c = 0
+		/* Given pStart and pEnd, we have
+		*   a = ( yEnd - yStart )
+		*   b = ( xStart - xEnd )
+		*   c = ( xEnd * yStart - xStart * yEnd )
+		*   dist( p, Line ) = | a * px + b * py + c | / sqrt( a^2 + b^2 )
+		*/
+		float _xStart = points[0].x;
+		float _yStart = points[0].y;
+
+		float _xEnd = points[ points.size() - 1 ].x;
+		float _yEnd = points[ points.size() - 1 ].y;
+
+		float _a = _yEnd - _yStart;
+		float _b = _xStart - _xEnd;
+		float _c = _xEnd * _yStart - _xStart * _yEnd;
+
+		float _divider = sqrt( _a * _a + _b * _b );
+
+		float _distCum = 0.0f;
+
+		for ( int q = 1; q < points.size() - 1; q++ )
+		{
+			_distCum += abs( _a * points[q].x + _b * points[q].y + _c ) / _divider;
+		}
+
+		return _distCum / ( points.size() - 2 );
 	}
 
 	//calibrar con opencv
@@ -121,11 +238,7 @@ public:
 		distCoeffs = Mat::zeros(8, 1, CV_64F);
 
 		vector< vector<Point3f> > objectPoints(1);
-
 		calcBoardCornerPositions(pattern_size , square_size_mm, objectPoints[0]);
-
-
-
 		objectPoints.resize(imagePoints.size(), objectPoints[0]);
 
 
@@ -235,8 +348,10 @@ public:
 
 	void undistort_frames(vector<Mat>& frames_input, vector<Mat>& frames_output, Mat& cameraMatrix , Mat& distCoeffs)
 	{
-		frames_output.resize(frames_input.size());
 
+		frames_output.clear();
+		frames_output.resize(frames_input.size());
+		
 		for (int i = 0; i < frames_input.size(); i++)
 		{
 			undistort(frames_input[i], frames_output[i], cameraMatrix, distCoeffs);
@@ -252,13 +367,22 @@ public:
 		{
 			ProcManager pm;
 			found = pm.findConcentrics(input, control_points);
+
+
+			
+
+
 		}
 		else if ( type_calibration == CHESSBOARD )
 		{
 			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
 			found = findChessboardCorners( input, pattern_size, control_points, chessBoardFlags);
+
+			if(!found) return false;
+
 			Mat viewGray;
 			cvtColor(input, viewGray, COLOR_BGR2GRAY);
+
 			cornerSubPix( viewGray, control_points, Size(11, 11), Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
 		}
 		else if ( type_calibration == ASYMMETRIC_CIRCLES_GRID )
@@ -267,14 +391,28 @@ public:
 			//waitKey();
 
 		}
-
 		return found;
 	}
 
 	bool find_control_points_front_parallel( Mat& input, vector<Point2f>& control_points )
 	{
 		//TODO: antes de  retornar los puntos, se debe agregar la rectificacion por colinearidad
-		return ( find_control_points(input, control_points) );
+		if (type_calibration == CONCENTRIC_CIRCLES || type_calibration == CHESSBOARD)
+		{
+			bool found = find_control_points(input, control_points);
+			if (!found) return false;
+
+			vector<Point2f> refined_colinearity;
+			refine_control_points_colinearity( control_points, refined_colinearity );
+			control_points = refined_colinearity;
+			return found;
+
+		}
+		else
+		{
+			return ( find_control_points(input, control_points) );
+		}
+
 	}
 
 	bool get_front_parallel(Mat& frame_input, Mat& frame_output, Mat& lambda)
@@ -286,7 +424,7 @@ public:
 
 		bool found = find_control_points(frame_input, control_points_input);
 
-
+		//joao
 
 		//si no encuentra los puntos no hay fronto paralelo
 		if (!found) return false;
@@ -303,7 +441,7 @@ public:
 		{
 
 			size_unit = frame_input.cols / 10.0f;
-		 	offset = -size_unit / 3.8f;
+			offset = -size_unit / 3.8f;
 			src_quad[0] = control_points_input[0];
 			src_quad[1] = control_points_input[width - 1];
 			src_quad[2] = control_points_input[width * height - 1];
@@ -317,12 +455,12 @@ public:
 			size_out.width = dest_quad[1].x - dest_quad[0].x + 2 * (-offset) + size_unit;
 			size_out.height = dest_quad[3].y - dest_quad[1].y + 2 * (-offset) + size_unit;
 		}
-		else if(type_calibration == CONCENTRIC_CIRCLES)
+		else if (type_calibration == CONCENTRIC_CIRCLES)
 		{
-			size_unit = frame_input.cols / 8.0f;
-		 	offset = -size_unit / 3.8f;
+			size_unit = frame_input.cols / 15.0f;
+			offset = -size_unit / 3.8f;
 
-		 	src_quad[0] = control_points_input[0];
+			src_quad[0] = control_points_input[0];
 			src_quad[1] = control_points_input[width - 1];
 			src_quad[2] = control_points_input[width * height - 1];
 			src_quad[3] = control_points_input[width * (height - 1)];
@@ -335,12 +473,12 @@ public:
 			size_out.width = dest_quad[1].x - dest_quad[0].x + 2 * (-offset) + size_unit;
 			size_out.height = dest_quad[3].y - dest_quad[1].y + 2 * (-offset) + size_unit;
 		}
-		else if( type_calibration == ASYMMETRIC_CIRCLES_GRID )
+		else if ( type_calibration == ASYMMETRIC_CIRCLES_GRID )
 		{
 
 			size_unit = frame_input.cols / 16.0f;
 			offset = size_unit / 3.8f;
-			
+
 			src_quad[0] = control_points_input[3];
 			src_quad[1] = control_points_input[43];
 			src_quad[2] = control_points_input[40];
@@ -349,26 +487,26 @@ public:
 			width = 11;
 			height = 7;
 
-			dest_quad[0] = Point2f( size_unit + offset, size_unit + 3*offset);
-			dest_quad[1] = Point2f( width * size_unit + offset, size_unit + 3*offset);
+			dest_quad[0] = Point2f( size_unit + offset, size_unit + 3 * offset);
+			dest_quad[1] = Point2f( width * size_unit + offset, size_unit + 3 * offset);
 
-			dest_quad[2] = Point2f( width * size_unit + offset, height * size_unit + 3*offset);
-			dest_quad[3] = Point2f( size_unit + offset, height * size_unit + 3*offset);
+			dest_quad[2] = Point2f( width * size_unit + offset, height * size_unit + 3 * offset);
+			dest_quad[3] = Point2f( size_unit + offset, height * size_unit + 3 * offset);
 
 
 			float sizeH = dest_quad[3].y - dest_quad[1].y;
 			float sizeW = dest_quad[1].x - dest_quad[0].x;
 
-			size_out.width = (10.0f/8.0f)*sizeW;
-			size_out.height = (10.0f/7.0f)*sizeH ;
+			size_out.width = (10.0f / 8.0f) * sizeW;
+			size_out.height = (10.0f / 7.0f) * sizeH ;
 		}
 
 
 		lambda = getPerspectiveTransform( src_quad, dest_quad );
 
-		
 
-		
+
+
 
 		warpPerspective(frame_input, frame_output, lambda, size_out );
 
@@ -376,6 +514,7 @@ public:
 		//pc.drawControlPointsCross(frame_input, src_quad );
 
 		//imshow("input", frame_input);
+
 		//imshow("fp", frame_output);
 		//waitKey();
 
@@ -384,10 +523,115 @@ public:
 		return true;
 	}
 
-	//recibe una imagen rectificada, devuelve los puntos corregidos en fronto paralelo en el espacio de la imagen rectificada
+
+	bool intercept_line(Point2f A, Point2f B, Point2f C, Point2f D, Point2f& interception)
+	{
+		// Linea AB --> a1x + b1y = c1
+		double a1 = B.y - A.y;
+		double b1 = A.x - B.x;
+		double c1 = a1 * (A.x) + b1 * (A.y);
+
+		// Linea CD --> a2x + b2y = c2
+		double a2 = D.y - C.y;
+		double b2 = C.x - D.x;
+		double c2 = a2 * (C.x) + b2 * (C.y);
+
+		double determinant = a1 * b2 - a2 * b1;
+
+		if (determinant == 0)
+		{
+			//es paralela
+			return false;
+		}
+		else
+		{
+			double x = (b2 * c1 - b1 * c2) / determinant;
+			double y = (a1 * c2 - a2 * c1) / determinant;
+			interception = Point2f(x, y);
+			return true;
+		}
+	}
+
+	void aproximate_line(vector<Point2f>& points, vector<Point2f>& line_out)
+	{
+		line_out.clear();
+		Vec4f line;
+		fitLine(points, line, CV_DIST_L2, 0, 0.01, 0.01);
+
+		Point2f p1 = Point2f(line[2], line[3]) - 1000 * (Point2f(line[0], line[1]));
+		Point2f p2 = Point2f(line[2], line[3]) + 1000 * (Point2f(line[0], line[1]));
+
+		line_out.push_back( p1 );
+		line_out.push_back( p2 );
+	}
+
+	void refine_control_points_colinearity(vector<Point2f>& control_points_front_parallel, vector<Point2f>& control_points_refined_colinearity)
+	{
+		vector< vector<Point2f> > points_h(pattern_size.height), points_v(pattern_size.width);
+		control_points_refined_colinearity.clear();
+
+		for (int i = 0; i < pattern_size.height; i++)
+		{
+
+			for(int j = 0; j<pattern_size.width; j++)
+			{
+				points_h[i].push_back(control_points_front_parallel[ j + pattern_size.width * i ]);
+			}
+			/*
+			points_h[i].push_back(control_points_front_parallel[ 0 + pattern_size.width * i ]);
+			points_h[i].push_back(control_points_front_parallel[ 1 + pattern_size.width * i ]);
+			points_h[i].push_back(control_points_front_parallel[ 2 + pattern_size.width * i ]);
+			points_h[i].push_back(control_points_front_parallel[ 3 + pattern_size.width * i ]);
+			points_h[i].push_back(control_points_front_parallel[ 4 + pattern_size.width * i ]);
+			*/
+		}
+
+		for (int i = 0; i < pattern_size.width; i++)
+		{
+			for(int j = 0; j<pattern_size.height; j++)
+			{
+				points_v[i].push_back(control_points_front_parallel[ j * pattern_size.width + i ]);
+			}
+			/*
+			points_v[i].push_back(control_points_front_parallel[ 0 + i ]);
+			points_v[i].push_back(control_points_front_parallel[ 5 + i ]);
+			points_v[i].push_back(control_points_front_parallel[ 10 + i ]);
+			points_v[i].push_back(control_points_front_parallel[ 15 + i ]);
+			*/
+		}
+
+
+		for (int i = 0; i < pattern_size.height; i++)
+		{
+			for (int j = 0; j < pattern_size.width; j++)
+			{
+				vector<Point2f> lineH, lineV;
+				aproximate_line(points_h[i], lineH);
+				aproximate_line(points_v[j], lineV);
+				//cv::line( front_parallel, lineH[0], lineH[1] , Scalar(0, 255, 0), 1, 8 );
+				//cv::line( front_parallel, lineV[0], lineV[1] , Scalar(0, 255, 0), 1, 8 );
+				Point2f interception;
+				intercept_line(lineH[0], lineH[1], lineV[0], lineV[1], interception);
+				control_points_refined_colinearity.push_back(interception);
+			}
+		}
+
+		/*
+		for(int i=0; i<20; i++)
+		{
+			cout<<"point detect     : "<<control_points_front_parallel[i]<<endl;
+			cout<<"point colinearity: "<<points_refine_colinearity[i]<<endl;
+		}
+
+		ProcManager pc;
+		pc.drawControlPointsCross(front_parallel, control_points_front_parallel, Scalar(255,255,0) );
+		pc.drawControlPointsCross(front_parallel, points_refine_colinearity );
+		*/
+	}
+
+	//recibe una imagen rectificada, devuelve los puntos corregidos en fronto paralelo en el espacio de la imagen sin rectificar
 	bool get_control_points_refine(Mat& frame_input, vector<Point2f>& control_points_refine, Mat& cameraMatrix, Mat& distCoeffs )
 	{
-
 
 
 		vector<Point2f> control_points_front_parallel;
@@ -396,14 +640,15 @@ public:
 		Mat front_parallel, lambda;
 		bool found = get_front_parallel( frame_input, front_parallel, lambda );
 
-
-
 		if (!found) return false;
 
 		//buscar los puntos de control en la imagen fronto paralela
 		found = find_control_points_front_parallel(front_parallel, control_points_front_parallel);
 		if (!found) return false;
 
+
+		//imshow("front_parallel", front_parallel);
+		//waitKey();
 
 		//llevar los puntos de control del fronto paralelo hacia la imagen rectificada
 		perspectiveTransform( control_points_front_parallel, control_points_refine, lambda.inv() );
@@ -412,7 +657,7 @@ public:
 		distControlPoints(control_points_refine, cameraMatrix, distCoeffs);
 
 
-		//cout<<"jojo"<<endl;
+
 
 		return true;
 
@@ -431,18 +676,18 @@ public:
 	}
 
 	//recibe una calibracion inicial desde archivo y empieza con la calibracion iterativa
-	void init_calibrate(const string& pathParameters, const string& pathFrames, const string& pathSave)
+	void init_calibrate(const string& pathParameters)
 	{
 		Mat cameraMatrix, distCoeffs;
 		vector<Mat> rvecs, tvecs;
 		double rms;
 		vector<Mat> frames;
-		readParameters(pathParameters, cameraMatrix, distCoeffs, rvecs, tvecs, rms);
+		readParameters(pathParameters+"initial_calibration.yml", cameraMatrix, distCoeffs, rvecs, tvecs, rms);
 
 		//leemos las  imagenes de la calibracion inicial
 		for (int i = 0; i < tvecs.size(); i++)
 		{
-			Mat image = imread(pathFrames + "frame_" + to_string(i) + ".jpg");
+			Mat image = imread(pathParameters + "frame_" + to_string(i) + ".jpg");
 			if (!image.data )
 			{
 
@@ -453,7 +698,11 @@ public:
 		}
 
 
-		cout << "rms initial " << rms << endl;
+		cout << "rms pre refine :" << rms << endl;
+
+		float colinearity = AVGcolinearityFrames(frames);
+		cout<<"colinearity pre refine : "<<colinearity<<endl;
+
 		calibrate( cameraMatrix, distCoeffs, rvecs, tvecs, frames );
 
 	}
@@ -461,10 +710,10 @@ public:
 	void calibrate(	Mat& cameraMatrix , Mat& distCoeffs, vector<Mat>& rvecs, vector<Mat>& tvecs, vector<Mat>& frames)
 	{
 
-		for ( int iteration = 0; iteration < 10; iteration++ )
+		vector<Mat> frames_undistorted;
+		for ( int iteration = 0; iteration < 15; iteration++ )
 		{
 
-			vector<Mat> frames_undistorted;
 			//corregimos las imagenes con los parametros de calibracion inical
 			undistort_frames(frames, frames_undistorted, cameraMatrix, distCoeffs);
 
@@ -472,6 +721,8 @@ public:
 			vector< vector<Point2f> > image_points;
 			vector<Mat> rechoiced_frames;
 
+			float colinearity = 0.0f;
+			int countCol = 0;
 			//buscar los puntos de control refinados
 			for (int i = 0; i < frames.size(); i++ )
 			{
@@ -479,13 +730,22 @@ public:
 				vector< Point2f > control_points_refine;
 				bool found = get_control_points_refine( frames_undistorted[i], control_points_refine, cameraMatrix, distCoeffs );
 
-
+				
 				if ( found )
 				{
 					rechoiced_frames.push_back(frames[i]);
 					image_points.push_back( control_points_refine );
+					
+					//metric
+					colinearity += AVGCheckEndColinearity(control_points_refine);
+					countCol++;
+
 				}
 			}
+
+			
+
+			colinearity /= ((float) countCol);
 
 			//actualizar la lista de frames, solo por sea el caso algun frame se descarte por perdida de deteccion
 			frames = rechoiced_frames;
@@ -493,14 +753,23 @@ public:
 			//calibramos con opencv
 			vector<float> reprojErrs;
 			double rms;
-
-
 			bool is_calibrate = opencv_calibration(frames[0].size(), cameraMatrix, distCoeffs, image_points, rvecs, tvecs, reprojErrs, rms );
 
 
+			//medimos los resultados
+			cout<<"frames used: "<<countCol<<endl;
+			cout << "rms iteration " << iteration << ": " << rms << endl;
+			//float colinearity = AVGcolinearityFrames(frames_undistorted);
+			cout<<"colinearity iteration "<<iteration<<": "<<colinearity<<endl;
+		}
 
-			cout << "iteration: " << iteration << " rms: " << rms << endl;
-
+		//vizualizar la calibracion
+		undistort_frames(frames, frames_undistorted, cameraMatrix, distCoeffs);
+		for ( int i = 0; i < frames.size(); i++ )
+		{
+			imshow("original", frames[ i ]);
+			imshow("calibrated", frames_undistorted[ i ]);
+			waitKey();
 		}
 
 	}

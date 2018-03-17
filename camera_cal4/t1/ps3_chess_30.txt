@@ -1,0 +1,47 @@
+rms pre refine :0.349837
+colinearity pre refine : 0.173348
+frames used: 30
+rms iteration 0: 0.240192
+colinearity iteration 0: 0.0815122
+frames used: 30
+rms iteration 1: 0.238451
+colinearity iteration 1: 0.0847335
+frames used: 30
+rms iteration 2: 0.240527
+colinearity iteration 2: 0.0850549
+frames used: 30
+rms iteration 3: 0.236209
+colinearity iteration 3: 0.0845684
+frames used: 30
+rms iteration 4: 0.237913
+colinearity iteration 4: 0.085221
+frames used: 30
+rms iteration 5: 0.238582
+colinearity iteration 5: 0.0843007
+frames used: 30
+rms iteration 6: 0.23876
+colinearity iteration 6: 0.0840052
+frames used: 30
+rms iteration 7: 0.238349
+colinearity iteration 7: 0.0841084
+frames used: 30
+rms iteration 8: 0.237777
+colinearity iteration 8: 0.0842857
+frames used: 30
+rms iteration 9: 0.237667
+colinearity iteration 9: 0.0840259
+frames used: 30
+rms iteration 10: 0.237691
+colinearity iteration 10: 0.0847959
+frames used: 30
+rms iteration 11: 0.236952
+colinearity iteration 11: 0.0849601
+frames used: 30
+rms iteration 12: 0.238568
+colinearity iteration 12: 0.0849325
+frames used: 30
+rms iteration 13: 0.23646
+colinearity iteration 13: 0.0840348
+frames used: 30
+rms iteration 14: 0.237227
+colinearity iteration 14: 0.0847907

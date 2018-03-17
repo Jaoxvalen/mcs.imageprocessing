@@ -944,13 +944,15 @@ public:
 		{
 
 			//if ( contours[i].size() > 5 && numberChilds(hierarchy , i) == 1 )
-			if ( contours[i].size() > 5)
+			if ( contours[i].size() > 1)
 			{
 
 				filters.push_back(i);
 				nNeighsCenterNear.push_back(0);
 				original[i] = minAreaRect( Mat(contours[i]) );
 				//drawContours( image, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+				//imshow("im", image);
+
 			}
 
 		}
@@ -977,10 +979,12 @@ public:
 					if (distance( lsEllipses[i], lsEllipses[j] ) < 2.0f )
 					{
 
+						//cout<<distance( lsEllipses[i], lsEllipses[j] )<<endl;
+
 						//nNeighsCenterNear[i] += 1;
 
 
-
+						
 						float wDiff = abs(	max(lsEllipses[i].element.size.width, lsEllipses[i].element.size.height) -
 						                    max(lsEllipses[j].element.size.width, lsEllipses[j].element.size.height) );
 
@@ -990,13 +994,13 @@ public:
 
 						//cout << wDiff << " " << hDiff << endl;
 
-						if ( wDiff > 4 && wDiff < 30
-						        && hDiff > 2 && hDiff < 50)
+						if ( wDiff > 4 && wDiff < 30 && hDiff > 2 && hDiff < 50)
 						{
 
 							//cout<<"size ellipse "<<lsEllipses[i].element.size.width<<" "<<lsEllipses[i].element.size.height<<endl;
 							nNeighsCenterNear[i] += 1;
 						}
+						
 					}
 				}
 			}

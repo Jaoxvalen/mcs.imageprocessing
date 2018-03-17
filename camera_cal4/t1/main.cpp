@@ -36,8 +36,6 @@ int init(int type)
 
 	ProcManager procHandler;
 
-	//ProcManager::create();
-
 	//capture frames
 	if ( type == CAPTURE_FRAMES )
 	{
@@ -132,96 +130,51 @@ int init(int type)
 			imshow("frame" , frame);
 			waitKey(10);
 			i++;
-			//cout<<i<<endl;
 		}
 	}
 
 	else if ( type == CALIB_CHECKBOARD )
 	{
-		CalibHandler manager(CHESSBOARD , Size(9, 6), 20.0f, "../t1/calib_chess_ps3.yml",
-		                     //"../res/videos/Calibration/Camera_Play_3/ChessBoard.webm");
-		                     "../res/videos/calibration/PS3_chess.avi");
-		//"../res/videos/calibration/LifeCam_chess.avi");
+		CalibHandler manager(CHESSBOARD , Size(7, 5), 27.0f, "../res/results/chessboard_50_life/", "../res/videos/life_chess.webm");
 		manager.calibration();
 	}
 	else if ( type == CALIB_ASYMMETRIC_CIRCLES_GRID )
 	{
-		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 20.0f, "../t1/calib_asycircles_ps3.yml",
-		                     "../res/videos/calibration/PS3_asymmetric_circles.avi");
-		//"../res/videos/calibration/LifeCam_asymmetric_circles.avi");
+		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 35.0f, "../res/results/asymmetric_50_life/", "../res/videos/life_asymmetric_circles.webm");
 		manager.calibration();
 	}
 	else if ( type == CALIB_CONCENTRIC_CIRCLES )
 	{
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 42.0f , "../t1/calib_concentrics_ps3.yml",
-		                     "../res/videos/calibration/PS3_rings.avi");
-		//"../res/videos/calibration/LifeCam_rings.avi");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_50_life/", "../res/videos/life_rings.webm");
 		manager.calibration();
-	}
-	else if ( type == FRONTO_PARALLEL )
-	{
-		CalibHandler manager;
-		int type_choose = CHESSBOARD;
-		string frames;
-		Size mPatternSize;
-		string parameters;
-		float sizePattern = 1.0f;
-		switch(type_choose) {
-		    case CHESSBOARD : 
-		    		//chessboard
-		    		mPatternSize = Size(9, 6);
-		    		frames = "frames_chess/";
-		    		parameters = "calib_chess_ps3.yml";
-		    		sizePattern = 20.0f;
-	    			break;
-
-		    case CONCENTRIC_CIRCLES : 
-		    		//rings
-		    		mPatternSize = Size(5, 4);
-		    		frames = "frames_rings/";
-		    		parameters = "calib_concentrics_ps3.yml";
-		    		sizePattern = 42.0f;
-	    			break;
-		}
-
-		cout<<parameters<<endl;
-		manager.refineControlPoints(parameters, "../res/images/calibration/"+ frames, mPatternSize, type_choose, sizePattern, "../res/results/");
 	}
 	else if(ITERATIVE_CALIB)
 	{
-		int type_choose = ASYMMETRIC_CIRCLES_GRID;
+		int type_choose = CONCENTRIC_CIRCLES;
 
 		if( type_choose == CHESSBOARD )
 		{
-			IterativeCalibration ic(CHESSBOARD, 20.0f);
-			ic.init_calibrate( "calib_chess_ps3.yml" ,"../res/images/calibration/frames_chess/", "../res/results/");
-		}
-		else if( type_choose == CONCENTRIC_CIRCLES )
-		{
-			IterativeCalibration ic(CONCENTRIC_CIRCLES, 42.0f);
-			ic.init_calibrate( "calib_concentrics_ps3.yml" ,"../res/images/calibration/frames_rings/", "../res/results/");
+			IterativeCalibration ic(CHESSBOARD, 27.0f);
+			ic.init_calibrate("../res/results/chessboard_50_life/");
 		}
 		else if( type_choose == ASYMMETRIC_CIRCLES_GRID )
 		{
-			IterativeCalibration ic(ASYMMETRIC_CIRCLES_GRID, 20.0f);
-			ic.init_calibrate( "calib_asycircles_ps3.yml" ,"../res/images/calibration/frames_asymetrics/", "../res/results/");
+			IterativeCalibration ic(ASYMMETRIC_CIRCLES_GRID, 35.0f);
+			ic.init_calibrate( "../res/results/asymmetric_50_life/");
 		}
-
-
-		
-		
+		else if( type_choose == CONCENTRIC_CIRCLES )
+		{
+			IterativeCalibration ic(CONCENTRIC_CIRCLES, 44.3f);
+			ic.init_calibrate( "../res/results/rings_50_life/");
+		}
+				
 	}
-
-	//waitKey();
 
 	return 0;
 }
 
 int main()
 {
-	/*
-	cout << "cv's build information" << endl;
-	cout << cv::getBuildInformation() << endl;*/
 
 	return init(ITERATIVE_CALIB);
 

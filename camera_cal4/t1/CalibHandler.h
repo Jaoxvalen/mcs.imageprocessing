@@ -785,7 +785,7 @@ public:
 
 		if (ok)
 		{
-			saveparams(mOutPutdir, cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
+			saveparams(mOutPutdir+"initial_calibration.yml", cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
 		}
 		return ok;
 	}
@@ -1023,7 +1023,7 @@ public:
 
 						//cout<<pointBuf.size()<<endl;
 
-						imwrite( "../res/images/calibration/frames_asymetrics/frame_" + to_string(nImgAdded) + ".jpg", view );
+						imwrite( mOutPutdir+"frame_" + to_string(nImgAdded) + ".jpg", view );
 						imagePoints.push_back(pointBuf);
 						nImgAdded++;
 						cout << "image frame added " << nImg << endl;

@@ -1,0 +1,2 @@
+rms pre refine :0.186378
+colinearity pre refine : 1.63174

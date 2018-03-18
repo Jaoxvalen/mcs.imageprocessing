@@ -842,8 +842,10 @@ public:
 		//cout<<"! "<<minX<<" "<<minY<<endl;
 		//cout<<"! "<<maxX<<" "<<maxY<<endl;
 
-		int paddingX = (maxX - minX)/5.0f; //40;
-		int paddingY = (maxY - minY)/5.0f;//40;
+		//joao: int paddingX = (maxX - minX)/5.0f;
+		//joao: int paddingY = (maxY - minY)/5.0f;
+		int paddingX = (maxX - minX)/2.0f; //40;
+		int paddingY = (maxY - minY)/2.0f;//40;
 
 		//cout<<"padding "<<paddingX<<" "<<paddingY<<endl;
 
@@ -922,8 +924,11 @@ public:
 		_procImage = _procImage(roi);
 
 		GaussianBlur( _procImage, _procImage, Size( 15, 15), 0, 0 );
-		adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 9, 2);
+		//joao: adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 9, 2);
+		adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 2);
 
+
+		imshow("_procImage", _procImage);
 
 		//Todo: erosion y dilatacion
 
@@ -943,7 +948,7 @@ public:
 		for ( int i = 0; i < contours.size(); i++ )
 		{
 
-			//if ( contours[i].size() > 5 && numberChilds(hierarchy , i) == 1 )
+			// joao: if ( contours[i].size() > 5 )
 			if ( contours[i].size() > 1)
 			{
 
@@ -1206,7 +1211,8 @@ public:
 			//ellipse( image, lsDetection[i].element , Scalar(255, 255, 0) , 2, 8 );
 		}
 
-		//imshow("_procImage", drawing);
+		
+		//waitKey();
 
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);

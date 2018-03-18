@@ -135,17 +135,17 @@ int init(int type)
 
 	else if ( type == CALIB_CHECKBOARD )
 	{
-		CalibHandler manager(CHESSBOARD , Size(7, 5), 27.0f, "../res/results/chessboard_50_life/", "../res/videos/life_chess.webm");
+		CalibHandler manager(CHESSBOARD , Size(7, 5), 27.0f, "../res/results/chessboard_20_life/", "../res/videos/life_chess.webm");
 		manager.calibration();
 	}
 	else if ( type == CALIB_ASYMMETRIC_CIRCLES_GRID )
 	{
-		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 35.0f, "../res/results/asymmetric_50_life/", "../res/videos/life_asymmetric_circles.webm");
+		CalibHandler manager(ASYMMETRIC_CIRCLES_GRID , Size(4, 11), 35.0f, "../res/results/fakes/", "../res/videos/life_asymmetric_circles.webm");
 		manager.calibration();
 	}
 	else if ( type == CALIB_CONCENTRIC_CIRCLES )
 	{
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_50_life/", "../res/videos/life_rings.webm");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_20_life/", "../res/videos/life_rings.webm");
 		manager.calibration();
 	}
 	else if(ITERATIVE_CALIB)
@@ -165,7 +165,7 @@ int init(int type)
 		else if( type_choose == CONCENTRIC_CIRCLES )
 		{
 			IterativeCalibration ic(CONCENTRIC_CIRCLES, 44.3f);
-			ic.init_calibrate( "../res/results/rings_50_life/");
+			ic.init_calibrate( "../res/results/rings_50/");
 		}
 				
 	}

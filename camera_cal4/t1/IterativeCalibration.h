@@ -505,6 +505,7 @@ public:
 		lambda = getPerspectiveTransform( src_quad, dest_quad );
 
 
+		
 
 
 
@@ -517,6 +518,16 @@ public:
 
 		//imshow("fp", frame_output);
 		//waitKey();
+
+
+		/*
+		ProcManager pcx;
+		pcx.drawControlPointsCross(frame_input,src_quad);
+		pcx.drawControlPointsCross(frame_output,dest_quad);
+		imshow("front parallel", frame_output);
+		imshow("imagen", frame_input);
+		waitKey();
+		*/
 
 
 
@@ -688,6 +699,7 @@ public:
 		for (int i = 0; i < tvecs.size(); i++)
 		{
 			Mat image = imread(pathParameters + "frame_" + to_string(i) + ".jpg");
+			//cout<<pathParameters + "frame_" + to_string(i) + ".jpg"<<endl;
 			if (!image.data )
 			{
 
@@ -711,7 +723,7 @@ public:
 	{
 
 		vector<Mat> frames_undistorted;
-		for ( int iteration = 0; iteration < 15; iteration++ )
+		for ( int iteration = 0; iteration < 3; iteration++ )
 		{
 
 			//corregimos las imagenes con los parametros de calibracion inical

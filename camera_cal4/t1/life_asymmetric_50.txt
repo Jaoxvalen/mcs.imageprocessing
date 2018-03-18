@@ -1,0 +1,11 @@
+rms pre refine :0.21179
+colinearity pre refine : 1.466
+frames used: 48
+rms iteration 0: 0.174354
+colinearity iteration 0: 1.44551
+frames used: 45
+rms iteration 1: 0.169025
+colinearity iteration 1: 1.45087
+frames used: 42
+rms iteration 2: 0.175571
+colinearity iteration 2: 1.4671

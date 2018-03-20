@@ -5,6 +5,7 @@ t1/CMakeFiles/main.out.dir/main.cpp.o: t1/CalibHandler.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/Ellipse.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/IterativeCalibration.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/ProcManager.h
+t1/CMakeFiles/main.out.dir/main.cpp.o: t1/RingsDetector.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/Utils.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/main.cpp
 t1/CMakeFiles/main.out.dir/main.cpp.o: /usr/local/include/opencv/cxcore.h

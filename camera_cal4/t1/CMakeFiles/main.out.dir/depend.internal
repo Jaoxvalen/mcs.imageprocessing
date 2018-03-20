@@ -6,6 +6,7 @@ t1/CMakeFiles/main.out.dir/main.cpp.o
  /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
  /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/IterativeCalibration.h
  /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+ /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/RingsDetector.h
  /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
  /home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/main.cpp
  /usr/local/include/opencv/cxcore.h

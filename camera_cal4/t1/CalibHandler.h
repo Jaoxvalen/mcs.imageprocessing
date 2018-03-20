@@ -16,6 +16,7 @@
 #include "Utils.h"
 #include "ProcManager.h"
 #include "IterativeCalibration.h"
+#include "RingsDetector.h"
 
 using namespace cv;
 using namespace std;
@@ -596,7 +597,7 @@ public:
 		colinearityIni /= cant;
 
 		cout << "colinearity mean initial :" << colinearityIni << endl;
-		
+
 
 
 
@@ -622,7 +623,7 @@ public:
 				}
 				else
 				{
-					cout<<"frame removed: "<<indexs[i]<<endl;
+					cout << "frame removed: " << indexs[i] << endl;
 				}
 
 				if ( isSampler )
@@ -785,7 +786,7 @@ public:
 
 		if (ok)
 		{
-			saveparams(mOutPutdir+"initial_calibration.yml", cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
+			saveparams(mOutPutdir + "initial_calibration.yml", cameraMatrix, distCoeffs, rvecs, tvecs,  totalAvgErr);
 		}
 		return ok;
 	}
@@ -884,8 +885,150 @@ public:
 		return ok;
 	}
 
+	void createGridArea(vector< vector<Point2f> > &quads, Mat& area)
+	{
+		//cuadrantes
+		float quad_width = float(area.cols) / 4.0f;
+		float quad_height = float(area.rows) / 4.0f;
 
 
+		for (int i = 0; i < 4; i++ )
+		{
+			for (int j = 0; j < 4; j++)
+			{
+
+				vector<Point2f> quad;
+
+				int x = j * quad_width; 	int y = i * quad_height;
+				int x1 = x + quad_width;  	int y1 = i * quad_height;
+				int x2 = x + quad_width;  	int y2 = y1 + quad_height;
+				int x3 = x; 				int y3 = y1 + quad_height;
+
+				if (x1 >= area.cols) {x1 = x2 = (area.cols - 1);}
+				if (y2 >= area.rows) {y2 = y3 = (area.rows - 1);}
+
+				quad.push_back(Point2f(x, y));
+				quad.push_back(Point2f(x1, y1));
+				quad.push_back(Point2f(x2, y2));
+				quad.push_back(Point2f(x3, y3));
+
+				// cout << "----" << endl;
+				// cout << "x : " << x << ", y: " << y << endl;
+				// cout << "x1 : " << x1 << ", y1: " << y1 << endl;
+				// cout << "x2 : " << x2 << ", y2: " << y2 << endl;
+				// cout << "x3 : " << x3 << ", y3: " << y3 << endl;
+				// cout << "----" << endl;
+
+				quads.push_back(quad);
+
+			}
+		}
+
+
+		//cout << "quads size : " << quads.size() << endl;
+	}
+
+	Point2i getCordsArea(Size s_image, Size s_grid)
+	{
+		
+	}
+
+	void auto_calibration()
+	{
+
+		VideoCapture capture(mInputVideodir.c_str());
+
+
+		Mat frame;
+		if ( !capture.isOpened() )
+		{
+			cout << "Error when reading steam_avi" << endl;
+			return;
+		}
+		capture >> frame;
+
+		Mat area(frame.rows, frame.cols, CV_8UC3, Scalar(0, 0, 0));
+		vector< vector<Point2f> > gridArea;
+		createGridArea(gridArea, area);
+
+		for (int i = 0; i < gridArea.size(); i++)
+		{
+
+			int thickness = 1;
+			int lineType = 4;
+			line( area, gridArea[i][0], gridArea[i][1], Scalar( 0, 0, 255 ),    thickness,    lineType );
+			line( area, gridArea[i][1], gridArea[i][2], Scalar( 0, 0, 255 ),    thickness,    lineType );
+			line( area, gridArea[i][2], gridArea[i][3], Scalar( 0, 0, 255 ),    thickness,    lineType );
+			line( area, gridArea[i][3], gridArea[i][0], Scalar( 0, 0, 255 ),    thickness,    lineType );
+
+		}
+
+		
+
+
+		
+		while (true)
+		{
+
+			if (!frame.data) break;
+
+
+			Mat frame_copy = frame.clone();
+
+			vector<Point2f> pointBuf;
+			bool found;
+			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
+
+			if (mTypeCalib == CHESSBOARD)
+			{
+				found = findChessboardCorners( frame, mPatternSize, pointBuf, chessBoardFlags);
+			}
+			else if ( mTypeCalib == CIRCLES_GRID )
+			{
+				found = findCirclesGrid( frame, mPatternSize, pointBuf );
+			}
+			else if ( mTypeCalib == ASYMMETRIC_CIRCLES_GRID )
+			{
+				found = findCirclesGrid( frame, mPatternSize, pointBuf, CALIB_CB_ASYMMETRIC_GRID );
+			}
+			else if ( mTypeCalib == CONCENTRIC_CIRCLES )
+			{
+				RingsDetector rd;
+				found = rd.findPattern(frame, pointBuf);
+			}
+			else
+			{
+				found = false;
+			}
+
+			if (found)
+			{
+
+				if ( mTypeCalib == CHESSBOARD)
+				{
+					Mat viewGray;
+					cvtColor(frame, viewGray, COLOR_BGR2GRAY);
+					cornerSubPix( viewGray, pointBuf, Size(11, 11), Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
+				}
+
+
+
+				drawChessboardCorners( frame_copy, mPatternSize, Mat(pointBuf), found );
+			}
+
+			imshow("frame", frame_copy);
+			imshow("area", area);
+
+
+
+			capture >> frame;
+
+			waitKey(5);
+		}
+
+
+
+	}
 
 	void calibration()
 	{
@@ -1023,7 +1166,7 @@ public:
 
 						//cout<<pointBuf.size()<<endl;
 
-						imwrite( mOutPutdir+"frame_" + to_string(nImgAdded) + ".jpg", view );
+						imwrite( mOutPutdir + "frame_" + to_string(nImgAdded) + ".jpg", view );
 						imagePoints.push_back(pointBuf);
 						nImgAdded++;
 						cout << "image frame added " << nImg << endl;
@@ -1040,9 +1183,7 @@ public:
 							rt.center.y = pointBuf[i].y;
 							ellipse( area, rt , Scalar(0, 255, 0) , 1, 8 );
 						}
-
 						imshow("area", area);
-
 					}
 				}
 				if (auxView.data)

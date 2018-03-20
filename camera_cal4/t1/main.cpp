@@ -4,6 +4,8 @@
 #include "CalibHandler.h"
 #include "IterativeCalibration.h"
 
+#include "RingsDetector.h"
+
 #include <iostream>
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -28,7 +30,9 @@ enum initType
 	CALIB_ASYMMETRIC_CIRCLES_GRID,
 	CALIB_CONCENTRIC_CIRCLES,
 	FRONTO_PARALLEL,
-	ITERATIVE_CALIB
+	ITERATIVE_CALIB,
+	DETECTOR_PROTOTYPE,
+	CALIBRATION_PROTOTYPE
 };
 
 int init(int type)
@@ -40,6 +44,50 @@ int init(int type)
 	if ( type == CAPTURE_FRAMES )
 	{
 		Utils::captureFrames("../res/videos/calibration_ps3eyecam.avi", "../res/images/frames/", true);
+	}
+	else if ( type == CALIBRATION_PROTOTYPE )
+	{
+
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_20_life/", "../res/videos/PS3_rings.webm");
+		manager.auto_calibration();
+	}
+	else if ( type == DETECTOR_PROTOTYPE )
+	{
+		string filename("../res/videos/PS3_rings.webm");
+		VideoCapture capture(filename.c_str());
+		//VideoCapture capture(0);
+
+		Mat frame;
+		if ( !capture.isOpened() )
+		{
+			cout << "Error when reading steam_avi" << endl;
+			return -1;
+		}
+		int i = 0;
+		int w = -1;
+		capture >> frame;
+		i++;
+		do
+		{
+
+
+			vector<Point2f> pointBuf;
+
+			RingsDetector rd;
+			rd.findPattern(frame, pointBuf);
+
+
+			imshow("frame" , frame);
+			w = waitKey();
+			if (w == 83)
+			{
+				capture >> frame;
+				i++;
+			}
+			//cout << "frame" << i << endl;
+
+		} while (w != 27); //escape
+
 	}
 
 	//open from image file
@@ -145,29 +193,30 @@ int init(int type)
 	}
 	else if ( type == CALIB_CONCENTRIC_CIRCLES )
 	{
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_20_life/", "../res/videos/life_rings.webm");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/celu/", "../res/videos/cel_calib.mp4");
+		//CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_20_life/", "../res/videos/life_rings.webm");
 		manager.calibration();
 	}
-	else if(ITERATIVE_CALIB)
+	else if (ITERATIVE_CALIB)
 	{
 		int type_choose = CONCENTRIC_CIRCLES;
 
-		if( type_choose == CHESSBOARD )
+		if ( type_choose == CHESSBOARD )
 		{
 			IterativeCalibration ic(CHESSBOARD, 27.0f);
 			ic.init_calibrate("../res/results/chessboard_50_life/");
 		}
-		else if( type_choose == ASYMMETRIC_CIRCLES_GRID )
+		else if ( type_choose == ASYMMETRIC_CIRCLES_GRID )
 		{
 			IterativeCalibration ic(ASYMMETRIC_CIRCLES_GRID, 35.0f);
 			ic.init_calibrate( "../res/results/asymmetric_50_life/");
 		}
-		else if( type_choose == CONCENTRIC_CIRCLES )
+		else if ( type_choose == CONCENTRIC_CIRCLES )
 		{
 			IterativeCalibration ic(CONCENTRIC_CIRCLES, 44.3f);
 			ic.init_calibrate( "../res/results/rings_50/");
 		}
-				
+
 	}
 
 	return 0;
@@ -176,6 +225,6 @@ int init(int type)
 int main()
 {
 
-	return init(ITERATIVE_CALIB);
+	return init(CALIBRATION_PROTOTYPE);
 
 }

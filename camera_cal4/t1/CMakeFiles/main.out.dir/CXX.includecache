@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
 iostream
 -
 sstream
@@ -34,15 +34,17 @@ opencv2/highgui.hpp
 thread
 -
 Utils.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
 ProcManager.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 IterativeCalibration.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/IterativeCalibration.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/IterativeCalibration.h
 RingsDetector.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/RingsDetector.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/RingsDetector.h
+grid.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/grid.h
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
 iostream
 -
 string
@@ -52,7 +54,7 @@ opencv2/opencv.hpp
 opencv2/highgui.hpp
 -
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/IterativeCalibration.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/IterativeCalibration.h
 iostream
 -
 sstream
@@ -80,11 +82,11 @@ opencv2/highgui.hpp
 thread
 -
 Utils.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
 ProcManager.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 chrono
 -
 iostream
@@ -96,9 +98,9 @@ opencv2/opencv.hpp
 opencv2/highgui.hpp
 -
 Ellipse.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/RingsDetector.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/RingsDetector.h
 chrono
 -
 iostream
@@ -110,9 +112,9 @@ opencv2/opencv.hpp
 opencv2/highgui.hpp
 -
 Ellipse.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Ellipse.h
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
 iostream
 -
 string
@@ -122,17 +124,45 @@ opencv2/opencv.hpp
 opencv2/highgui.hpp
 -
 
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/main.cpp
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/grid.h
+iostream
+-
+sstream
+-
+string
+-
+ctime
+-
+cstdio
+-
+opencv2/core.hpp
+-
+opencv2/core/utility.hpp
+-
+opencv2/imgproc.hpp
+-
+opencv2/calib3d.hpp
+-
+opencv2/imgcodecs.hpp
+-
+opencv2/videoio.hpp
+-
+opencv2/highgui.hpp
+-
 Utils.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
+
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/main.cpp
+Utils.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/Utils.h
 ProcManager.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/ProcManager.h
 CalibHandler.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/CalibHandler.h
 IterativeCalibration.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/IterativeCalibration.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/IterativeCalibration.h
 RingsDetector.h
-/home/joao/Documents/Imagenes/mcs.imageprocessing/camera_cal4/t1/RingsDetector.h
+/home/joao/Documents/files/imagenes/mcs.imageprocessing/camera_cal4/t1/RingsDetector.h
 iostream
 -
 string

@@ -48,7 +48,7 @@ int init(int type)
 	else if ( type == CALIBRATION_PROTOTYPE )
 	{
 
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_20_life/", "../res/videos/PS3_rings.webm");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/test/", "../res/videos/rings.webm");
 		manager.auto_calibration();
 	}
 	else if ( type == DETECTOR_PROTOTYPE )

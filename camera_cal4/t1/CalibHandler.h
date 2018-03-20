@@ -17,6 +17,7 @@
 #include "ProcManager.h"
 #include "IterativeCalibration.h"
 #include "RingsDetector.h"
+#include "grid.h"
 
 using namespace cv;
 using namespace std;
@@ -928,10 +929,7 @@ public:
 		//cout << "quads size : " << quads.size() << endl;
 	}
 
-	Point2i getCordsArea(Size s_image, Size s_grid)
-	{
-		
-	}
+	
 
 	void auto_calibration()
 	{
@@ -947,6 +945,8 @@ public:
 		}
 		capture >> frame;
 
+
+		/*
 		Mat area(frame.rows, frame.cols, CV_8UC3, Scalar(0, 0, 0));
 		vector< vector<Point2f> > gridArea;
 		createGridArea(gridArea, area);
@@ -961,10 +961,11 @@ public:
 			line( area, gridArea[i][2], gridArea[i][3], Scalar( 0, 0, 255 ),    thickness,    lineType );
 			line( area, gridArea[i][3], gridArea[i][0], Scalar( 0, 0, 255 ),    thickness,    lineType );
 
-		}
+		}*/
 
 		
-
+		grid mGrid(Size(frame.cols, frame.rows), Size(8,8));
+		
 
 		
 		while (true)
@@ -1011,17 +1012,18 @@ public:
 					cornerSubPix( viewGray, pointBuf, Size(11, 11), Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
 				}
 
-
+				mGrid.fillPoints(pointBuf);
 
 				drawChessboardCorners( frame_copy, mPatternSize, Mat(pointBuf), found );
 			}
 
 			imshow("frame", frame_copy);
-			imshow("area", area);
+			//imshow("area", area);
 
 
 
 			capture >> frame;
+			mGrid.show();
 
 			waitKey(5);
 		}

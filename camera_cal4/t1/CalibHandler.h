@@ -1136,7 +1136,14 @@ public:
 				}
 				else if ( mTypeCalib == CONCENTRIC_CIRCLES )
 				{
-					found = concentricHand.findConcentrics(view, pointBuf);
+
+					//jaox
+
+					RingsDetector rd;
+
+					found = rd.findPattern(view, pointBuf);
+
+					//found = concentricHand.findConcentrics(view, pointBuf);
 				}
 				else
 				{
@@ -1152,6 +1159,7 @@ public:
 						              Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
 					}
 
+					/*
 					if ( mTypeCalib != CONCENTRIC_CIRCLES )
 					{
 						//imshow("Image View alt", auxView);
@@ -1160,7 +1168,8 @@ public:
 					else
 					{
 						concentricHand.drawControlPoints( auxView, pointBuf );
-					}
+					}*/
+					drawChessboardCorners( auxView, mPatternSize, Mat(pointBuf), found );
 
 
 					if (key == ENTER_KEY)

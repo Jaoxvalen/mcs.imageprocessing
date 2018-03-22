@@ -77,6 +77,9 @@ public:
 	void fillPoint(const Point2f& point)
 	{
 		circle( canvas, point , 1 , Scalar(255, 255, 255) , 1, 1 );
+
+
+
 		Point2i coord = getCordsArea(point);
 
 		if( canvas.at<Vec3b>(point.y, point.x) != Vec3b(255, 255, 255))
@@ -87,10 +90,17 @@ public:
 	}
 	void fillPoints(const vector<Point2f>& points)
 	{
+
+		//polylines(canvas, points[0], &point.size() , int ncontours, bool isClosed, const Scalar& color, int thickness=1, int lineType=8, int shift=0 )
+
+
+		int nPoints = points.size();
+		//polylines(canvas, &points, &nPoints, 1, false, Scalar(255, 255, 255));
+		/*
 		for(int i = 0; i<points.size(); i++)
 		{
 			fillPoint(points[i]);
-		}
+		}*/
 	}
 
 	void show()

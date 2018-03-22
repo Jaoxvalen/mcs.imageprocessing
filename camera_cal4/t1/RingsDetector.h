@@ -56,6 +56,8 @@ public:
 
 	bool findPattern( Mat& image, vector<Point2f> &pointBuf )
 	{
+
+
 		pointBuf.clear();
 
 		vector<Ellipse> lsDetection;
@@ -97,6 +99,8 @@ public:
 			}
 
 		}
+
+
 
 
 		for (int i = 0; i < filters.size(); i++)
@@ -160,10 +164,15 @@ public:
 			}
 		}
 
+
+		if(lsMedianaChild.empty()) return false;
+
 		sort(lsMedianaChild.begin(), lsMedianaChild.end(), lessCompareW);
 		float mediaW = lsMedianaChild[lsMedianaChild.size() / 2].element.size.width;
 		sort(lsMedianaChild.begin(), lsMedianaChild.end(), lessCompareH);
 		float mediaH = lsMedianaChild[lsMedianaChild.size() / 2].element.size.height;
+
+
 
 		lsMedianaChild.clear();
 		for (int i = 0; i < lsEllipsesAux.size(); i++)
@@ -179,6 +188,8 @@ public:
 				}
 			}
 		}
+
+
 
 		lsEllipses = lsMedianaChild;
 
@@ -227,6 +238,8 @@ public:
 
 		lsEllipses = lsEllipsesAux;
 
+
+
 		for (int i = 0; i < lsEllipses.size(); i++)
 		{
 
@@ -250,6 +263,8 @@ public:
 
 		}
 
+		
+
 		for(int i = 0; i<lsDetection.size(); i++)
 		{
 			ellipse( image, lsDetection[i].element , Scalar(0, 0, 0) , -1, 50 );
@@ -257,6 +272,8 @@ public:
 		
 		Size mPatternSize(5, 4);
 		bool found = findCirclesGrid( image, mPatternSize, pointBuf );
+
+
 
 		return found;
 

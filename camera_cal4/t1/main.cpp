@@ -48,7 +48,7 @@ int init(int type)
 	else if ( type == CALIBRATION_PROTOTYPE )
 	{
 
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/test/", "../res/videos/rings.webm");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/test/", "../res/videos/PS3_rings.webm");
 		manager.auto_calibration();
 	}
 	else if ( type == DETECTOR_PROTOTYPE )
@@ -193,7 +193,7 @@ int init(int type)
 	}
 	else if ( type == CALIB_CONCENTRIC_CIRCLES )
 	{
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/celu/", "../res/videos/cel_calib.mp4");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/celu/", "../res/videos/ps3.webm");
 		//CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_20_life/", "../res/videos/life_rings.webm");
 		manager.calibration();
 	}
@@ -225,6 +225,6 @@ int init(int type)
 int main()
 {
 
-	return init(CALIBRATION_PROTOTYPE);
+	return init(CALIB_CONCENTRIC_CIRCLES);
 
 }

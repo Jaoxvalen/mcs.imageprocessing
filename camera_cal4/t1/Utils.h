@@ -5,7 +5,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
-
+#include <random>
 
 using namespace std;
 using namespace cv;
@@ -13,7 +13,7 @@ using namespace cv;
 namespace vision
 {
 
-enum TYPECALIB
+enum TYPE_CALIB
 {
 	CHESSBOARD,
 	CIRCLES_GRID,
@@ -21,9 +21,37 @@ enum TYPECALIB
 	CONCENTRIC_CIRCLES
 };
 
+enum TYPE_FRONTO_PARALLEL
+{
+	PERSPECTIVE_TRANSFORM,
+	INSTRINSIC_EXTRINSIC
+};
+
+enum TYPE_REFINED_POINTS
+{
+	RP_SIMPLE,
+	RP_COLINEARITY,
+	RP_AVG_SIMPLE_COLINEARITY,
+	RP_BARICENTER
+};
+
 class Utils
 {
 public:
+
+
+	static int randint(int min, int max)
+	{
+		std::random_device rd;     // only used once to initialise (seed) engine
+		std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+		std::uniform_int_distribution<int> uni(min, max); // guaranteed unbiased
+
+		int random_integer = uni(rng);
+
+		return random_integer;
+	}
+
+
 	static bool readImageFromFile(const string& path_image, Mat& image)
 	{
 		image = imread(path_image);

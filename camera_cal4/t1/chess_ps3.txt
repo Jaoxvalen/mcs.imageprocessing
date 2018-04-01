@@ -1,3 +1,0 @@
-Error when reading steam_avi
-Reading frames
-all frames was readed

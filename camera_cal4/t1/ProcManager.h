@@ -788,7 +788,7 @@ public:
 		//drawControlPointsCross(image, points);
 	}
 
-	void drawControlPointsCross(Mat& image, vector<Point2f>& points, Scalar color = Scalar(0,0,255), float size = 3 )
+	void drawControlPointsCross(Mat& image, vector<Point2f>& points, Scalar color = Scalar(0,0,255), float size = 0 )
 	{
 		//drawControlPoints(image, points, true);
 		
@@ -798,8 +798,8 @@ public:
 			Point2f p2(points[i].x, points[i].y + size);
 			Point2f p3(points[i].x-size, points[i].y);
 			Point2f p4(points[i].x+size, points[i].y);
-			line( image, p1, p2, color, 1, 8 );
-			line( image, p3, p4, color, 1, 8 );
+			line( image, p1, p2, color, 2, 8 );
+			line( image, p3, p4, color, 2, 8 );
 		}
 	}
 
@@ -928,7 +928,7 @@ public:
 		adaptiveThreshold(_procImage , _procImage, max_thresh, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 2);
 
 
-		imshow("_procImage", _procImage);
+		//imshow("_procImage", _procImage);
 
 		//Todo: erosion y dilatacion
 

@@ -929,7 +929,7 @@ public:
 		//cout << "quads size : " << quads.size() << endl;
 	}
 
-	
+
 
 	void auto_calibration()
 	{
@@ -963,11 +963,11 @@ public:
 
 		}*/
 
-		
-		grid mGrid(Size(frame.cols, frame.rows), Size(8,8));
-		
 
-		
+		grid mGrid(Size(frame.cols, frame.rows), Size(8, 8));
+
+
+
 		while (true)
 		{
 
@@ -1032,6 +1032,22 @@ public:
 
 	}
 
+	void readFramesFromFile(vector<Mat>& frames, const string& path, int n)
+	{
+		//leemos las  imagenes de la calibracion inicial
+		for (int i = 0; i < n; i++)
+		{
+			Mat image = imread(path + "frame" + to_string(i) + ".png");
+			if (!image.data )
+			{
+
+				cout << "Image no read" << endl;
+				return;
+			}
+			frames.push_back(image);
+		}
+	}
+
 	void calibration()
 	{
 		//init state capture
@@ -1044,6 +1060,8 @@ public:
 		//FOR REMAP
 		Mat rview, map1, map2;
 
+		vector<Mat> frames;
+
 
 		const Scalar RED(0, 0, 255), GREEN(0, 255, 0);
 		int ESC_KEY = 27;
@@ -1054,20 +1072,20 @@ public:
 		int nImg = 0;
 		int nImgAdded = 0;
 
+
 		VideoCapture cam;
 
 		cam = VideoCapture(mInputVideodir.c_str());
 		cam >> view;
-
-		//
-		//area = Mat(view.size());
-		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0, 0, 0));
 
 		if (!cam.isOpened()) {
 			cout << "Error: not open file " << mInputVideodir << endl;
 			getchar();
 			return;
 		}
+
+		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0, 0, 0));
+
 
 		//bucle
 		while (STATE != STATE_FINISH)
@@ -1079,9 +1097,10 @@ public:
 
 				if (key == NEXT_KEY)
 				{
+					
 					cam >> view;
-
 					nImg++;
+					cout << "nImage: " << nImg << endl;
 				}
 				auxView = view.clone();
 				temp = view.clone();
@@ -1103,46 +1122,13 @@ public:
 				{
 					found = findCirclesGrid( view, mPatternSize, pointBuf, CALIB_CB_ASYMMETRIC_GRID );
 
-					/*
-					if (found)
-					{
-						RotatedRect rt;
-						rt.size.width = 10;
-						rt.size.height = 10;
-
-						rt.center.x = pointBuf[0].x;
-						rt.center.y = pointBuf[0].y;
-						ellipse( temp, rt , Scalar(0, 255, 0) , 1, 8 );
-						rt.center.x = pointBuf[1].x;
-						rt.center.y = pointBuf[1].y;
-						ellipse( temp, rt , Scalar(0, 255, 0) , 1, 8 );
-						rt.center.x = pointBuf[2].x;
-						rt.center.y = pointBuf[2].y;
-						ellipse( temp, rt , Scalar(0, 255, 0) , 1, 8 );
-						rt.center.x = pointBuf[3].x;
-						rt.center.y = pointBuf[3].y;
-						ellipse( temp, rt , Scalar(0, 255, 0) , 1, 8 );
-						rt.center.x = pointBuf[4].x;
-						rt.center.y = pointBuf[4].y;
-						ellipse( temp, rt , Scalar(0, 255, 0) , 1, 8 );
-						rt.center.x = pointBuf[5].x;
-						rt.center.y = pointBuf[5].y;
-						ellipse( temp, rt , Scalar(0, 255, 0) , 1, 8 );
-
-						imshow("temp", temp);
-
-					}*/
-
 				}
 				else if ( mTypeCalib == CONCENTRIC_CIRCLES )
 				{
 
 					//jaox
-
 					RingsDetector rd;
-
-					found = rd.findPattern(view, pointBuf);
-
+					found = rd.findPattern(auxView, pointBuf);
 					//found = concentricHand.findConcentrics(view, pointBuf);
 				}
 				else
@@ -1151,6 +1137,8 @@ public:
 				}
 				if ( found )
 				{
+
+
 					if ( mTypeCalib == CHESSBOARD)
 					{
 						Mat viewGray;
@@ -1169,6 +1157,8 @@ public:
 					{
 						concentricHand.drawControlPoints( auxView, pointBuf );
 					}*/
+
+
 					drawChessboardCorners( auxView, mPatternSize, Mat(pointBuf), found );
 
 
@@ -1177,7 +1167,8 @@ public:
 
 						//cout<<pointBuf.size()<<endl;
 
-						imwrite( mOutPutdir + "frame_" + to_string(nImgAdded) + ".jpg", view );
+						imwrite( mOutPutdir + "frame_" + to_string(nImgAdded) + ".png", view );
+						//imwrite( mOutPutdir + "frame_" + to_string(nImgAdded), view );
 						imagePoints.push_back(pointBuf);
 						nImgAdded++;
 						cout << "image frame added " << nImg << endl;
@@ -1359,6 +1350,7 @@ public:
 
 			key = waitKey();
 
+			cout<<"key "<<key<<endl;
 
 		}
 	}

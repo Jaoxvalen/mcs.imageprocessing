@@ -193,8 +193,9 @@ int init(int type)
 	}
 	else if ( type == CALIB_CONCENTRIC_CIRCLES )
 	{
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/celu/", "../res/videos/ps3.webm");
-		//CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/rings_20_life/", "../res/videos/life_rings.webm");
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/rings_mkv_out/", "../res/videos/mkv_ps3.mkv");
+
+		//CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/rings_life_nico_out/", "../res/results/rings_life_nico/");
 		manager.calibration();
 	}
 	else if (ITERATIVE_CALIB)
@@ -214,7 +215,8 @@ int init(int type)
 		else if ( type_choose == CONCENTRIC_CIRCLES )
 		{
 			IterativeCalibration ic(CONCENTRIC_CIRCLES, 44.3f);
-			ic.init_calibrate( "../res/results/rings_50/");
+			ic.init_calibrate( "../res/results/rings_mkv_out/");
+			//ic.init_calibrate( "../res/results/rings_50_life/");
 		}
 
 	}
@@ -225,6 +227,6 @@ int init(int type)
 int main()
 {
 
-	return init(CALIB_CONCENTRIC_CIRCLES);
+	return init(ITERATIVE_CALIB);
 
 }

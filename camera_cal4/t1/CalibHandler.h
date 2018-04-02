@@ -18,6 +18,9 @@
 #include "IterativeCalibration.h"
 #include "RingsDetector.h"
 #include "grid.h"
+#include "SelectorFrame.h"
+
+#include <map>
 
 using namespace cv;
 using namespace std;
@@ -30,8 +33,6 @@ enum STATECALIB
 	STATE_CALIBRATED,
 	STATE_SHOW_UNDISTORT
 };
-
-
 
 
 
@@ -930,12 +931,29 @@ public:
 	}
 
 
+	//joao
 
-	void auto_calibration()
+	void auto_calibration2(int number_frames)
+	{
+
+		Mat cameraMatrix, distCoeffs;
+		vector<Mat> rvecs, tvecs;
+		double rms;
+		vector<Mat> frames;
+
+		readParameters(mOutPutdir + "final_calibration.yml", cameraMatrix, distCoeffs, rvecs, tvecs, rms);
+
+		vector<int> indexes;
+		getIndexesFromVideo(mInputVideodir.c_str(), indexes, cameraMatrix, distCoeffs, number_frames);
+
+		calibrate_by_index_frame(indexes);
+
+	}
+
+	void auto_calibration(int number_frames)
 	{
 
 		VideoCapture capture(mInputVideodir.c_str());
-
 
 		Mat frame;
 		if ( !capture.isOpened() )
@@ -949,56 +967,26 @@ public:
 		capture >> frame;
 		int index_frame = 1;
 
-		grid mGrid(Size(frame.cols, frame.rows), Size(4, 4), 20);
+		grid mGrid(Size(frame.cols, frame.rows), Size(8, 8), number_frames);
 
 
 		while (true)
 		{
 
 			if (!frame.data) break;
-
-			cout<<"index_frame "<<index_frame<<endl;
-
+			//cout<<"index_frame "<<index_frame<<endl;
 			Mat frame_copy = frame.clone();
 
 			vector<Point2f> pointBuf;
 			bool found;
-			int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
 
-			if (mTypeCalib == CHESSBOARD)
-			{
-				found = findChessboardCorners( frame, mPatternSize, pointBuf, chessBoardFlags);
-			}
-			else if ( mTypeCalib == CIRCLES_GRID )
-			{
-				found = findCirclesGrid( frame, mPatternSize, pointBuf );
-			}
-			else if ( mTypeCalib == ASYMMETRIC_CIRCLES_GRID )
-			{
-				found = findCirclesGrid( frame, mPatternSize, pointBuf, CALIB_CB_ASYMMETRIC_GRID );
-			}
-			else if ( mTypeCalib == CONCENTRIC_CIRCLES )
-			{
-				RingsDetector rd;
-				found = rd.findPattern(frame, pointBuf);
-			}
-			else
-			{
-				found = false;
-			}
+			RingsDetector rd;
+			found = rd.findPattern(frame, pointBuf);
 
 			if (found)
 			{
 
-				if ( mTypeCalib == CHESSBOARD)
-				{
-					Mat viewGray;
-					cvtColor(frame, viewGray, COLOR_BGR2GRAY);
-					cornerSubPix( viewGray, pointBuf, Size(11, 11), Size(-1, -1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1 ));
-				}
-
 				mGrid.fillPoints(pointBuf, index_frame);
-
 				drawChessboardCorners( frame_copy, mPatternSize, Mat(pointBuf), found );
 			}
 
@@ -1007,12 +995,179 @@ public:
 			index_frame++;
 			mGrid.show();
 
-			waitKey(5);
+			waitKey(1);
+		}
+		mGrid.take_frames();
+
+		calibrate_by_index_frame(mGrid.selected_indices);
+
+	}
+
+
+
+
+	void calibrate_by_index_frame(vector<int> indices)
+	{
+		cout << "#frames selected: " << indices.size() << endl;
+
+		Mat cameraMatrix, distCoeffs;
+		Mat view, auxView, temp;
+		VideoCapture capture(mInputVideodir.c_str());
+		int nImgAdded = 0;
+		vector<vector<Point2f> > imagePoints;
+
+
+		sort( indices.begin(), indices.end());
+
+		int frame_indice = indices[0];
+
+
+		if ( !capture.isOpened() )
+		{
+			cout << "Error when reading steam_avi" << endl;
+			return;
 		}
 
-		mGrid.take_frames();
-		waitKey();
+		capture >> view;
 
+		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0, 0, 0));
+
+
+		auto it_index = indices.begin();
+
+		int global_index = 0;
+
+		while (true)
+		{
+			if (!view.data) break;
+
+			if(it_index != indices.end())
+			if (*it_index == global_index  )
+			{
+
+				it_index++;
+
+				auxView = view.clone();
+				temp = view.clone();
+
+				vector<Point2f> pointBuf;
+				bool found;
+
+				imshow("images selected", temp);
+
+
+				//jaox
+				RingsDetector rd;
+				found = rd.findPattern(temp, pointBuf);
+
+				if ( found )
+				{
+					drawChessboardCorners( auxView, mPatternSize, Mat(pointBuf), found );
+
+					imwrite( mOutPutdir + "frame_" + to_string(nImgAdded) + ".png", view );
+
+					imagePoints.push_back(pointBuf);
+					nImgAdded++;
+
+
+					cout << "image frame added " << (*it_index) << endl;
+					cout << "image to calibration added " << nImgAdded << endl;
+
+
+					RotatedRect rt;
+					rt.size.width = 10;
+					rt.size.height = 10;
+
+					for (int i = 0; i < pointBuf.size(); i++)
+					{
+						rt.center.x = pointBuf[i].x;
+						rt.center.y = pointBuf[i].y;
+						ellipse( area, rt , Scalar(0, 255, 0) , 1, 8 );
+					}
+					imshow("area", area);
+
+
+					if (auxView.data)
+					{
+						imshow("Image View", auxView);
+					}
+
+					waitKey(1);
+
+				}
+
+
+			}
+
+			capture >> view;
+			global_index ++;
+
+			if ( it_index == indices.end() ) break;
+
+		}
+
+
+
+		//capture.set(CV_CAP_PROP_POS_FRAMES, indices[0]-1);
+
+		/*
+
+		capture >> view;
+		Mat area(view.rows, view.cols, CV_8UC3, Scalar(0, 0, 0));
+
+		for (int i = 0; i < indices.size(); i++)
+		{
+			capture.set(CV_CAP_PROP_POS_FRAMES, indices[i]-1);
+			capture >> view;
+			auxView = view.clone();
+			temp = view.clone();
+
+			vector<Point2f> pointBuf;
+			bool found;
+
+			imshow("images selected", temp);
+
+
+			//jaox
+			RingsDetector rd;
+			found = rd.findPattern(temp, pointBuf);
+
+			if ( found )
+			{
+				drawChessboardCorners( auxView, mPatternSize, Mat(pointBuf), found );
+
+				imwrite( mOutPutdir + "frame_" + to_string(nImgAdded) + ".png", view );
+
+				imagePoints.push_back(pointBuf);
+				nImgAdded++;
+				cout << "image frame added " << i << endl;
+				cout << "image to calibration added " << nImgAdded << endl;
+
+
+				RotatedRect rt;
+				rt.size.width = 10;
+				rt.size.height = 10;
+
+				for (int i = 0; i < pointBuf.size(); i++)
+				{
+					rt.center.x = pointBuf[i].x;
+					rt.center.y = pointBuf[i].y;
+					ellipse( area, rt , Scalar(0, 255, 0) , 1, 8 );
+				}
+				imshow("area", area);
+			}
+
+			if (auxView.data)
+			{
+				imshow("Image View", auxView);
+			}
+
+			waitKey(200);
+		}*/
+
+		cvDestroyWindow("Image View");
+		cout << "calibrating..." << endl;
+		runCalibrationAndSave(view.size(),  cameraMatrix, distCoeffs, imagePoints);
 
 	}
 
@@ -1062,6 +1217,7 @@ public:
 		cam = VideoCapture(mInputVideodir.c_str());
 		cam >> view;
 
+
 		if (!cam.isOpened()) {
 			cout << "Error: not open file " << mInputVideodir << endl;
 			getchar();
@@ -1081,7 +1237,7 @@ public:
 
 				if (key == NEXT_KEY)
 				{
-					
+
 					cam >> view;
 					nImg++;
 					cout << "nImage: " << nImg << endl;
@@ -1191,7 +1347,6 @@ public:
 			{
 				cvDestroyWindow("Image View");
 				cout << "calibrating..." << endl;
-
 				runCalibrationAndSave(view.size(),  cameraMatrix, distCoeffs, imagePoints);
 				STATE = STATE_CALIBRATED;
 			}
@@ -1334,7 +1489,7 @@ public:
 
 			key = waitKey();
 
-			cout<<"key "<<key<<endl;
+			cout << "key " << key << endl;
 
 		}
 	}

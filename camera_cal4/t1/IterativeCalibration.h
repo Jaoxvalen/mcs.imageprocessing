@@ -31,13 +31,12 @@ public:
 
 	Size pattern_size;
 	float square_size_mm;
-
 	int type_calibration;
 	int type_fronto_parallel;
 	int type_refined_points;
-
 	bool show_images_info;
 
+	string pathParameters;
 
 	IterativeCalibration(int type_calibration, float square_size_mm,
 	                     int type_fronto_parallel = PERSPECTIVE_TRANSFORM,
@@ -784,6 +783,9 @@ public:
 	//recibe una calibracion inicial desde archivo y empieza con la calibracion iterativa
 	void init_calibrate(const string& pathParameters)
 	{
+
+		this->pathParameters = pathParameters;
+
 		Mat cameraMatrix, distCoeffs;
 		vector<Mat> rvecs, tvecs;
 		double rms;
@@ -819,13 +821,47 @@ public:
 		cout << "colinearity pre refine : " << colinearity << endl;
 
 
+
 		calibrate( cameraMatrix, distCoeffs, rvecs, tvecs, frames );
 
 	}
 
+
+	void saveparams(const std::string& filename, const Mat& cameraMatrix, const Mat& distCoeffs,
+	                const std::vector<Mat>& rvecs, const std::vector<Mat>& tvecs, const double& RMS)
+	{
+		FileStorage fs( filename, FileStorage::WRITE );
+		fs << "Calibrate_Accuracy" << RMS;
+		fs << "Camera_Matrix" << cameraMatrix;
+		fs << "Distortion_Coefficients" << distCoeffs;
+		fs << "Rotation_Vector" << rvecs;
+		fs << "Translation_vector" << tvecs;
+
+		if ( !rvecs.empty() && !tvecs.empty() ) {
+
+			CV_Assert(rvecs[0].type() == tvecs[0].type());
+
+			Mat bigmat((int)rvecs.size(), 6, rvecs[0].type());
+
+			for ( int i = 0; i < (int)rvecs.size(); i++ ) {
+				Mat r = bigmat(Range(i, i + 1), Range(0, 3));
+				Mat t = bigmat(Range(i, i + 1), Range(3, 6));
+
+				CV_Assert(rvecs[i].rows == 3 && rvecs[i].cols == 1);
+				CV_Assert(tvecs[i].rows == 3 && tvecs[i].cols == 1);
+
+				r = rvecs[i].t();
+				t = tvecs[i].t();
+			}
+			cvWriteComment( *fs, "Rotation vector + Translation vector", 0 );
+			fs << "extrinsic_parameters" << bigmat;
+		}
+		fs.release();
+	}
+
 	void calibrate(	Mat& cameraMatrix , Mat& distCoeffs, vector<Mat>& rvecs, vector<Mat>& tvecs, vector<Mat>& frames)
 	{
-
+		double rms;
 		vector<Mat> frames_undistorted;
 		for ( int iteration = 0; iteration < 3; iteration++ )
 		{
@@ -871,7 +907,7 @@ public:
 						ProcManager pcx;
 						pcx.drawControlPointsCross(frame_clone , control_points_refine);
 						imshow("refined points", frame_clone);
-						waitKey(0);
+						waitKey(TIME_SHOW_IMAGE_INFO);
 					}
 
 
@@ -886,8 +922,10 @@ public:
 
 			//calibramos con opencv
 			vector<float> reprojErrs;
-			double rms;
+			
 			bool is_calibrate = opencv_calibration(frames[0].size(), cameraMatrix, distCoeffs, image_points, rvecs, tvecs, reprojErrs, rms );
+
+
 
 
 			colinearity = computeColinearError(image_points, pattern_size);
@@ -897,6 +935,9 @@ public:
 			cout << "rms iteration " << iteration << ": " << rms << endl;
 			cout << "colinearity iteration " << iteration << ": " << colinearity << endl;
 		}
+
+
+		saveparams(pathParameters + "final_calibration.yml", cameraMatrix, distCoeffs, rvecs, tvecs,  rms);
 
 		//vizualizar la calibracion
 		undistort_frames(frames, frames_undistorted, cameraMatrix, distCoeffs);

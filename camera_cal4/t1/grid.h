@@ -43,12 +43,14 @@ private:
 
 	vector< vector< grid_cell > > mfill;
 
-	vector<int> selected_indices;
+
 
 
 
 	Mat canvas, percent;
 public:
+
+	vector<int> selected_indices;
 
 	grid(Size s_image, Size s_grid, int n_frames)
 	{
@@ -140,6 +142,8 @@ public:
 
 		int take_frames = 0;
 
+		cout << "# frames para tomar: " << n_frames << endl;
+
 		while ( n_frames >  take_frames)
 		{
 			int takes = 0;
@@ -149,13 +153,15 @@ public:
 				{
 					cout << "Celda " << i << "," << j << endl;
 					takes = getRandomFrames( Point2i(i, j) , 1 );
-				}
-			}
-			if(takes>0)
-			{
-				take_frames += takes;
-			}
 
+					take_frames += takes;
+					//cout << "take_frames " << take_frames << endl;
+					if (take_frames >= n_frames) return;
+
+				}
+
+
+			}
 		}
 
 
@@ -188,18 +194,17 @@ public:
 			if (!exist)
 			{
 				selected_indices.push_back(index_frame);
+
 				cout << "frame tomado: " << index_frame << endl;
 				takes++;
 			}
+			//cout << "takes_random " << takes << endl;
 			if (takes == num_frames) break;
 		}
 
 		return takes;
 
 	}
-
-
-
 
 
 	//void fillPoint(const Point2f& point)

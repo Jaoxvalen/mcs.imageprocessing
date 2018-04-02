@@ -12,11 +12,26 @@
 #include <opencv2/highgui.hpp>
 #include <cmath>
 #include <chrono>
+#include <sstream>
 
 using namespace std;
 using namespace cv;
 using namespace chrono;
 using namespace vision;
+
+
+
+/*parametros de entrada*/
+string p_distribution;
+string p_dir_in;
+string p_dir_out;
+int p_n_frames;
+string p_fronto_par_type;
+string p_control_points_type;
+double p_min_angle;
+double p_max_angle;
+/*---------------------*/
+
 
 enum initType
 {
@@ -32,7 +47,7 @@ enum initType
 	FRONTO_PARALLEL,
 	ITERATIVE_CALIB,
 	DETECTOR_PROTOTYPE,
-	CALIBRATION_PROTOTYPE
+	AUTO_CALIBRATION
 };
 
 int init(int type)
@@ -45,11 +60,15 @@ int init(int type)
 	{
 		Utils::captureFrames("../res/videos/calibration_ps3eyecam.avi", "../res/images/frames/", true);
 	}
-	else if ( type == CALIBRATION_PROTOTYPE )
+	else if ( type == AUTO_CALIBRATION )
 	{
 
-		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f ,"../res/results/test/", "../res/videos/mkv_ps3.mkv");
-		manager.auto_calibration();
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/test_dist/", "../res/videos/mkv_ps3.mkv");
+		manager.auto_calibration(50);
+
+		IterativeCalibration ic(CONCENTRIC_CIRCLES, 44.3f, PERSPECTIVE_TRANSFORM, RP_SIMPLE, false);
+		ic.init_calibrate( "../res/results/test_dist/");
+
 	}
 	else if ( type == DETECTOR_PROTOTYPE )
 	{
@@ -221,9 +240,98 @@ int init(int type)
 	return 0;
 }
 
-int main()
+
+
+
+int main(int argc, char** argv)
 {
 
-	return init(CALIBRATION_PROTOTYPE);
+	/*
+
+		Ejecutar:
+		./main.out p_distribution p_dir_in p_dir_out p_n_frames p_fronto_par_type p_control_points_type p_min_angle p_max_angle
+
+		p_distribution:
+		DIST_RAMDOM|DIST_EXT
+
+		p_dir_in:
+		ruta del video de entrada
+
+		p_dir_out:
+		ruta de carpeta de salida
+
+		p_n_frames:
+		numero de frames para calibrar
+
+		p_fronto_par_type
+		FP_INS_EXT|FP_PERSPECTIVE
+
+		p_control_points_type
+		RP_SIMPLE|RP_COLINEARITY|RP_AVG_SIMPLE_COLINEARITY|RP_BARICENTER
+
+		p_min_angle
+		minimo angulo en radianes
+
+		p_max_angle
+		max angulo en radianes
+	*/
+
+
+
+	/*
+	if (argc < 7) {
+		cout << "Faltan parametros" << endl;
+		return;
+	}
+	else
+	{
+		p_distribution = string(argv[1]);
+		p_dir_in = string(argv[2]);
+		p_dir_out = string(argv[3]);
+		istringstream ss(argv[4]);
+		if (!(ss >> p_n_frames))
+		{
+			cerr << "p_n_frames debe ser un numero" << argv[4] <<endl;
+			return 0;
+		}
+
+		if( p_n_frames<1 )
+		{
+			cerr << "p_n_frames debe ser un numero positivo" << argv[4] <<endl;
+			return 0;
+		}
+
+		p_fronto_par_type = string(argv[5]);
+		p_control_points_type = string(argv[6]);
+
+		if( !(p_distribution =="DIST_RAMDOM" || p_distribution =="DIST_EXT") )
+		{
+			cerr << "p_distribution debe ser DIST_RAMDOM o DIST_EXT"<<endl;
+			return 0;
+		}
+
+		if( !(p_fronto_par_type == "FP_INS_EXT" || p_distribution == "FP_PERSPECTIVE") )
+		{
+			cerr << "p_fronto_par_type debe ser FP_INS_EXT o FP_PERSPECTIVE"<<endl;
+			return 0;
+		}
+
+		if( p_fronto_par_type == "FP_INS_EXT" ) p_fronto_par_type = INSTRINSIC_EXTRINSIC;
+		else if( p_fronto_par_type == "FP_INS_EXT" ) p_fronto_par_type = PERSPECTIVE_TRANSFORM;
+
+		if( !(p_control_points_type == "RP_SIMPLE"
+				|| p_control_points_type == "RP_COLINEARITY"
+				|| p_control_points_type == "RP_AVG_SIMPLE_COLINEARITY"
+				|| p_control_points_type == "RP_BARICENTER"
+				) )
+		{
+			cerr << "p_fronto_par_type debe ser FP_INS_EXT o FP_PERSPECTIVE"<<endl;
+			return 0;
+		}
+
+
+	}*/
+
+	return init(AUTO_CALIBRATION);
 
 }

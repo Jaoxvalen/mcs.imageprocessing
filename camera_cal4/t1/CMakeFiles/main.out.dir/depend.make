@@ -6,6 +6,7 @@ t1/CMakeFiles/main.out.dir/main.cpp.o: t1/Ellipse.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/IterativeCalibration.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/ProcManager.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/RingsDetector.h
+t1/CMakeFiles/main.out.dir/main.cpp.o: t1/SelectorFrame.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/Utils.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/grid.h
 t1/CMakeFiles/main.out.dir/main.cpp.o: t1/main.cpp

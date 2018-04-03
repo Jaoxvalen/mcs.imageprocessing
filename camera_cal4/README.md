@@ -1,4 +1,4 @@
-# Instrucciones para compilar:
+# Instrucciones para compilar y ejecutar:
 1. En la carpeta camera_cal4 ejecutar $cmake .
 2. Ingresar a t1, ejecutar $make
 3. ejecutar el código

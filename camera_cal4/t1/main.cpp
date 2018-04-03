@@ -28,6 +28,8 @@ string p_dir_out;
 int p_n_frames;
 string p_fronto_par_type;
 string p_control_points_type;
+int p_fronto_par_type_int;
+int p_control_points_type_int;
 double p_min_angle;
 double p_max_angle;
 /*---------------------*/
@@ -63,11 +65,28 @@ int init(int type)
 	else if ( type == AUTO_CALIBRATION )
 	{
 
+		/*
 		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , "../res/results/test_dist/", "../res/videos/mkv_ps3.mkv");
 		manager.auto_calibration(50);
 
 		IterativeCalibration ic(CONCENTRIC_CIRCLES, 44.3f, PERSPECTIVE_TRANSFORM, RP_SIMPLE, false);
 		ic.init_calibrate( "../res/results/test_dist/");
+		*/
+
+		CalibHandler manager(CONCENTRIC_CIRCLES , Size(5, 4), 44.3f , p_dir_out, p_dir_in);
+
+		if(p_distribution == "DIST_ANGLE")
+		{
+			manager.auto_calibration2(p_n_frames, p_min_angle, p_max_angle);
+		}
+		else if( p_distribution =="DIST_RAMDOM" )
+		{
+			manager.auto_calibration(p_n_frames);
+		}
+		
+
+		IterativeCalibration ic(CONCENTRIC_CIRCLES, 44.3f, p_fronto_par_type_int, p_control_points_type_int, false);
+		ic.init_calibrate( p_dir_out);
 
 	}
 	else if ( type == DETECTOR_PROTOTYPE )
@@ -246,13 +265,43 @@ int init(int type)
 int main(int argc, char** argv)
 {
 
+
+
+	//CASOS DE PRUEBA
+
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_SIMPLE
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_AVG_SIMPLE_COLINEARITY
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_BARICENTER
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_COLINEARITY
+
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_SIMPLE
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_AVG_SIMPLE_COLINEARITY
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_BARICENTER
+	//./main.out DIST_RAMDOM ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_COLINEARITY
+
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_SIMPLE 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_AVG_SIMPLE_COLINEARITY 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_BARICENTER 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_PERSPECTIVE RP_COLINEARITY 0 15
+
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_SIMPLE 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_AVG_SIMPLE_COLINEARITY 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_BARICENTER 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_COLINEARITY 0 15
+
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_SIMPLE 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_AVG_SIMPLE_COLINEARITY 0 15
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_BARICENTER 5 65
+	//./main.out DIST_ANGLE ../res/videos/mkv_ps3.mkv ../res/results/test_dist/ 30 FP_INS_EXT RP_COLINEARITY 5 65
+
+
 	/*
 
 		Ejecutar:
 		./main.out p_distribution p_dir_in p_dir_out p_n_frames p_fronto_par_type p_control_points_type p_min_angle p_max_angle
 
 		p_distribution:
-		DIST_RAMDOM|DIST_EXT
+		DIST_RAMDOM|DIST_ANGLE
 
 		p_dir_in:
 		ruta del video de entrada
@@ -276,12 +325,12 @@ int main(int argc, char** argv)
 		max angulo en radianes
 	*/
 
+	//.mai
 
 
-	/*
 	if (argc < 7) {
 		cout << "Faltan parametros" << endl;
-		return;
+		return 0;
 	}
 	else
 	{
@@ -291,46 +340,86 @@ int main(int argc, char** argv)
 		istringstream ss(argv[4]);
 		if (!(ss >> p_n_frames))
 		{
-			cerr << "p_n_frames debe ser un numero" << argv[4] <<endl;
+			cerr << "p_n_frames debe ser un numero" << argv[4] << endl;
 			return 0;
 		}
 
-		if( p_n_frames<1 )
+		if ( p_n_frames < 1 )
 		{
-			cerr << "p_n_frames debe ser un numero positivo" << argv[4] <<endl;
+			cerr << "p_n_frames debe ser un numero positivo" << argv[4] << endl;
 			return 0;
 		}
 
 		p_fronto_par_type = string(argv[5]);
 		p_control_points_type = string(argv[6]);
 
-		if( !(p_distribution =="DIST_RAMDOM" || p_distribution =="DIST_EXT") )
+		if ( !(p_distribution == "DIST_RAMDOM" || p_distribution == "DIST_ANGLE") )
 		{
-			cerr << "p_distribution debe ser DIST_RAMDOM o DIST_EXT"<<endl;
+			cerr << "p_distribution debe ser DIST_RAMDOM o DIST_ANGLE" << endl;
 			return 0;
 		}
 
-		if( !(p_fronto_par_type == "FP_INS_EXT" || p_distribution == "FP_PERSPECTIVE") )
+		if (p_distribution == "DIST_ANGLE")
 		{
-			cerr << "p_fronto_par_type debe ser FP_INS_EXT o FP_PERSPECTIVE"<<endl;
+			if (argc < 9)
+			{
+				cout << "Faltan parámetros de minimo angulo y maximo angulo" << endl;
+				return 0;
+			}
+
+			istringstream ss1(argv[4]);
+			if (!(ss1 >> p_min_angle))
+			{
+				cerr << "p_min_angle debe ser un numero " << argv[7] << endl;
+				return 0;
+			}
+
+			if ( p_min_angle < 1 )
+			{
+				cerr << "p_min_angle debe ser un numero positivo " << argv[7] << endl;
+				return 0;
+			}
+
+			istringstream ss2(argv[8]);
+			if (!(ss2 >> p_max_angle))
+			{
+				cerr << "p_max_angle debe ser un numero " << argv[8] << endl;
+				return 0;
+			}
+
+			if ( p_max_angle < 1 )
+			{
+				cerr << "p_max_angle debe ser un numero positivo " << argv[8] << endl;
+				return 0;
+			}
+		}
+
+		if ( !(p_fronto_par_type == "FP_INS_EXT" || p_fronto_par_type == "FP_PERSPECTIVE") )
+		{
+			cerr << "p_fronto_par_type debe ser FP_INS_EXT o FP_PERSPECTIVE" << endl;
 			return 0;
 		}
 
-		if( p_fronto_par_type == "FP_INS_EXT" ) p_fronto_par_type = INSTRINSIC_EXTRINSIC;
-		else if( p_fronto_par_type == "FP_INS_EXT" ) p_fronto_par_type = PERSPECTIVE_TRANSFORM;
+		if ( p_fronto_par_type == "FP_INS_EXT" ) p_fronto_par_type_int = INSTRINSIC_EXTRINSIC;
+		else if ( p_fronto_par_type == "FP_PERSPECTIVE" ) p_fronto_par_type_int = PERSPECTIVE_TRANSFORM;
 
-		if( !(p_control_points_type == "RP_SIMPLE"
-				|| p_control_points_type == "RP_COLINEARITY"
-				|| p_control_points_type == "RP_AVG_SIMPLE_COLINEARITY"
-				|| p_control_points_type == "RP_BARICENTER"
-				) )
+		if ( !(p_control_points_type == "RP_SIMPLE"
+		        || p_control_points_type == "RP_COLINEARITY"
+		        || p_control_points_type == "RP_AVG_SIMPLE_COLINEARITY"
+		        || p_control_points_type == "RP_BARICENTER"
+		      ) )
 		{
-			cerr << "p_fronto_par_type debe ser FP_INS_EXT o FP_PERSPECTIVE"<<endl;
+			cerr << "p_fronto_par_type debe ser: RP_SIMPLE, RP_COLINEARITY, RP_AVG_SIMPLE_COLINEARITY o RP_BARICENTER" << endl;
 			return 0;
 		}
 
+		if ( p_fronto_par_type == "RP_SIMPLE" ) p_control_points_type_int = RP_SIMPLE;
+		else if ( p_fronto_par_type == "RP_COLINEARITY" ) p_control_points_type_int = RP_COLINEARITY;
+		else if ( p_fronto_par_type == "RP_AVG_SIMPLE_COLINEARITY" ) p_control_points_type_int = RP_AVG_SIMPLE_COLINEARITY;
+		else if ( p_fronto_par_type == "RP_BARICENTER" ) p_control_points_type_int = RP_BARICENTER;
 
-	}*/
+
+	}
 
 	return init(AUTO_CALIBRATION);
 

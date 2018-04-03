@@ -480,11 +480,13 @@ public:
 				refine_control_points_colinearity( control_points, refined_colinearity );
 				found = find_control_points(frame_input_original, control_points_originals);
 
+
+				if ( !found) return false;
 				//llevamos al espacio fronto paralelo los puntos distorsionados
 				perspectiveTransform( control_points_originals, control_points_originals_fp, lambda );
 
 
-				if ( !found) return false;
+				
 
 				for (int i = 0; i < control_points.size(); i++)
 				{

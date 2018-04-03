@@ -933,7 +933,7 @@ public:
 
 	//joao
 
-	void auto_calibration2(int number_frames)
+	void auto_calibration2(int number_frames, double min_angle, double max_angle)
 	{
 
 		Mat cameraMatrix, distCoeffs;
@@ -944,7 +944,12 @@ public:
 		readParameters(mOutPutdir + "final_calibration.yml", cameraMatrix, distCoeffs, rvecs, tvecs, rms);
 
 		vector<int> indexes;
-		getIndexesFromVideo(mInputVideodir.c_str(), indexes, cameraMatrix, distCoeffs, number_frames);
+
+
+		min_angle = ( min_angle * 180 ) / 3.141592653589793238463 ;
+		max_angle = ( max_angle * 180 ) / 3.141592653589793238463 ;
+
+		getIndexesFromVideo(mInputVideodir.c_str(), indexes, cameraMatrix, distCoeffs, number_frames, min_angle, max_angle);
 
 		calibrate_by_index_frame(indexes);
 

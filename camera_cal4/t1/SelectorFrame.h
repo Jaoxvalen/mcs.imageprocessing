@@ -31,7 +31,7 @@ static void calcBoardCornerPositions(Size boardSize, float squareSize, vector<Po
 
 void get_FramesBySquare(map<Rect, vector<pair<Mat, int> >, classcomp> &_r2mat, int _framesBySquare,
                         vector<int> & _frameIndex, Mat camera_matrix = Mat() ,
-                        Mat dist_coeffs = Mat(), double min_rot = 0.0, double max_rot = 0.0) {
+                        Mat dist_coeffs = Mat(), double min_rot = 0.0, double max_rot = 20.0) {
 
   vector<int> indexes;
 
@@ -141,7 +141,7 @@ void get_centroid(vector<Point2f>& _pointBuf, Point2f& centroid)
 }
 
 void getIndexesFromVideo(const string & _filename, vector<int>& indexes, Mat camera_matrix = Mat(),
-                         Mat dist_coeffs = Mat(), int nFrames = 54) {
+                         Mat dist_coeffs = Mat(), int nFrames = 54, double min_angle = 0.0, double max_angle = 20.0) {
 
   VideoCapture cap(_filename);
   if (!cap.isOpened()) return ;
@@ -223,7 +223,7 @@ void getIndexesFromVideo(const string & _filename, vector<int>& indexes, Mat cam
 
   int framesBySquare = nFrames / (sh * sw);
 
-  get_FramesBySquare(r2mat, framesBySquare, indexes, camera_matrix , dist_coeffs, 0.0, 0.3);
+  get_FramesBySquare(r2mat, framesBySquare, indexes, camera_matrix , dist_coeffs, min_angle, max_angle);
 
 }
 
